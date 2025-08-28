@@ -38,7 +38,7 @@ class RegisterUserSerializer(serializers.Serializer):
     photo_file = serializers.ImageField(required=False, allow_null=True)
     password = serializers.CharField(write_only=True, min_length=8)
     role = serializers.ChoiceField(
-        choices=["SUPERADMIN", "ADMIN_ONG", "AGENT"], 
+        choices=["SUPERADMIN", "GESTIONNAIRE", "MEDECIN", "PATIENTE"], 
         default="SUPERADMIN"
     )
 

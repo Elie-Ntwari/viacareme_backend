@@ -1,3 +1,4 @@
+import stat
 from typing import Optional
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction, IntegrityError
@@ -47,3 +48,17 @@ class UserRepository:
             setattr(user, attr, value)
         user.save()
         return user
+    
+    @staticmethod
+    def list_all_users():
+        """
+        Récupère tous les utilisateurs.
+        """
+        return User.objects.all().order_by("-date_creation")
+    
+    @staticmethod
+    def list_users_queryset():
+        """
+        Retourne un queryset de tous les utilisateurs (pour pagination).
+        """
+        return User.objects.all().order_by("-date_creation")

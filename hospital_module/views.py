@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from hospital_module.permissions import IsGestionnaireAdminLocal, IsSuperAdmin
-from hospital_module.serializers import CreateHopitalSerializer, HopitalSerializer
+from hospital_module.serializers import AddGestionnaireSerializer, CreateHopitalSerializer, GestionnaireSerializer, HopitalSerializer
 from hospital_module.services import HopitalService
 
 
@@ -43,14 +43,15 @@ class HopitalViewSet(viewsets.ViewSet):
         )
         return response
 
-    @action(detail=True, methods=['post'], url_path='add-manager', permission_classes=[IsGestionnaireAdminLocal])
-    def add_manager(self, request, pk=None):
-        """POST /api/hospitals/{id}/add-manager/ - ajouter un gestionnaire à un hôpital"""
+
+    @action(detail=True, methods=['post'], url_path='add-gestionnaire', 
+            permission_classes=[IsGestionnaireAdminLocal | IsSuperAdmin])
+    def add_gestionnaire(self, request, pk=None):
+        """POST /api/hospitals/{id}/add-gestionnaire/ - Ajouter un gestionnaire à un hôpital"""
+        
         hopital = HopitalService.get_hopital(pk)
-        if isinstance(hopital, Response):
-            return hopital
-        serializer = CreateHopitalSerializer(data=request.data)
+       
+        serializer = AddGestionnaireSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        gestionnaire_data = serializer.validated_data.get("gestionnaire")
-        response = HopitalService.add_gestionnaire(hopital, gestionnaire_data, request.user)
-        return response
+
+        return HopitalService.add_gestionnaire(hopital, serializer.validated_data, request.user)

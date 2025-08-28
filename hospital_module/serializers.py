@@ -31,3 +31,13 @@ class CreateHopitalSerializer(serializers.Serializer):
     latitude = serializers.FloatField(required=False)
     longitude = serializers.FloatField(required=False)
     gestionnaire = serializers.DictField()  # nom, postnom, prenom, email, password, telephone
+
+
+
+class AddGestionnaireSerializer(serializers.Serializer):
+    nom = serializers.CharField(max_length=150)
+    postnom = serializers.CharField(max_length=150)
+    prenom = serializers.CharField(max_length=150)
+    email = serializers.EmailField()
+    telephone = serializers.CharField(max_length=20, required=False, allow_blank=True)
+    is_admin_local = serializers.BooleanField(default=False)

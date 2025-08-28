@@ -7,11 +7,29 @@ from auth_module.serializers.user_serializer import (
     FinalizeLogin2FASerializer,
     InitiateLoginSerializer,
     RegisterUserSerializer,
+    UserFullSerializer,
 )
 from auth_module.services.user_service import UserService
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 
 class AuthViewSet(viewsets.ViewSet):
+
+    @action(detail=False, methods=['get'])
+    def list_users(self, request):  
+        """GET /auth/list-users/ - liste tous les utilisateurs"""
+        users = UserService.list_all_users()
+        if not users.exists():
+            return Response({"message": "Aucun utilisateur trouvé."}, status=status.HTTP_200_OK)
+        serializer = UserFullSerializer(users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=['get'])
+    def list_users_paginated(self, request):
+        """
+        GET /auth/list-users-paginated/?page=1&page_size=20
+        Liste paginée des utilisateurs
+        """
+        return UserService.list_users_paginated(request)
 
     @action(detail=False, methods=['post'])
     def register(self, request):

@@ -7,6 +7,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 import cloudinary.uploader
 import secrets
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.pagination import PageNumberPagination
 
 from auth_module.repositories.user_repository import UserRepository
 from auth_module.repositories.verification_repository import VerificationRepository
@@ -34,6 +35,25 @@ def _validate_image_file(file_obj):
 
 
 class UserService:
+
+
+    @staticmethod
+    def list_all_users():
+        return UserRepository.list_all_users()
+    
+    @staticmethod
+    def list_users_paginated(request):
+        """
+        Liste paginée des utilisateurs.
+        """
+        queryset = UserRepository.list_users_queryset()
+        paginator = PageNumberPagination()
+        paginator.page_size = int(request.query_params.get("page_size", 5))  # page_size param dynamique
+
+        page = paginator.paginate_queryset(queryset, request)
+        serializer = UserFullSerializer(page, many=True)
+
+        return paginator.get_paginated_response(serializer.data)
 
     @staticmethod
     def register_user(nom, postnom, prenom, email, telephone=None, photo_file=None, password=None, role="SUPERADMIN"):
