@@ -21,4 +21,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/',include('auth_module.urls.auth_urls')),  # Auth module URLs
     path('api/',include('hospital_module.urls')),  # Hospital module URLs
+    path('api/',include('cards_module.urls')),  # Cards module URLs
+    path('api/',include('medical_module.urls')),  # Medical module URLs
+    path('api/',include('patiente__module.urls')),  # Patiente module URLs
+    
 ]

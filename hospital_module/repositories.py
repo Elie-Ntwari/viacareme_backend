@@ -61,3 +61,11 @@ class HopitalRepository:
             is_admin_local=True
         )
         return gestionnaire
+    
+
+    @staticmethod
+    def get_by_id(hopital_id):
+        try:
+            return Hopital.objects.get(id=hopital_id)
+        except Hopital.DoesNotExist:
+            return None

@@ -60,6 +60,9 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',  # Pour blacklist des refresh tokens (optionnel mais conseillé)
     'auth_module',  # Votre application d'authentification
     'hospital_module',  # Votre application de gestion des hôpitaux
+    'cards_module',  # Votre application de gestion des cartes
+    'medical_module',  # Votre application de gestion médicale
+    'patiente__module',  # Votre application de gestion des patients
 ]
 
 
@@ -140,9 +143,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.AllowAny',
     ),
-    # 'DEFAULT_PERMISSION_CLASSES': (
-    #     'rest_framework.permissions.IsAuthenticated',
-    # ),
+
 
 }
 
