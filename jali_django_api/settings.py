@@ -23,15 +23,12 @@ env = environ.Env(
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # SECURITY
-SECRET_KEY = env('SECRET_KEY')
+SECRET_KEY ='django-insecure-sw8i=f@u$08&%g+5q!9u*nkt)q-*2(&(ncq927yw8cb^td!08w'
 DEBUG = True  # Passe à False en production
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]  # ajoute ton domaine en prod
+# ALLOWED_HOSTS et CORS
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost"])
+CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
 
-# CORS
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Vite/React dev
-    "http://localhost:8080",  # Vue dev (au cas où)
-]
 CORS_ALLOW_CREDENTIALS = True  # important pour envoyer cookies HttpOnly
 
 # Applications
@@ -95,6 +92,18 @@ TEMPLATES = [
 WSGI_APPLICATION = 'jali_django_api.wsgi.application'
 
 # Database
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': env('DATABASE_NAME'),
+#         'USER': env('DATABASE_USER'),
+#         'PASSWORD': env('DATABASE_PASSWORD'),
+#         'HOST': env('DATABASE_HOST'),
+#         'PORT': env('DATABASE_PORT'),
+#     }
+# }
+
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -103,6 +112,9 @@ DATABASES = {
         'PASSWORD': env('DATABASE_PASSWORD'),
         'HOST': env('DATABASE_HOST'),
         'PORT': env('DATABASE_PORT'),
+        'OPTIONS': {
+            'sslmode': env('DATABASE_SSL_MODE', default='require').strip(),
+        },
     }
 }
 
@@ -171,13 +183,22 @@ USE_I18N = True
 USE_TZ = True
 
 # Static files
-STATIC_URL = 'static/'
+# Static files (nécessaire pour prod)
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_URL = "/static/"
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Cookies (important pour le refresh token HttpOnly)
-SESSION_COOKIE_SECURE = False  # True en prod avec HTTPS
-CSRF_COOKIE_SECURE = False     # True en prod avec HTTPS
-SESSION_COOKIE_SAMESITE = "Strict"
-CSRF_COOKIE_SAMESITE = "Strict"
+# # Cookies (important pour le refresh token HttpOnly)
+# SESSION_COOKIE_SECURE = False  # True en prod avec HTTPS
+# CSRF_COOKIE_SECURE = False     # True en prod avec HTTPS
+# SESSION_COOKIE_SAMESITE = "Strict"
+# CSRF_COOKIE_SAMESITE = "Strict"
+
+
+# Sécuriser les cookies
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
