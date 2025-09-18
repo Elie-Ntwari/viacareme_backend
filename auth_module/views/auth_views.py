@@ -1,8 +1,10 @@
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.core.exceptions import ValidationError
 from auth_module.serializers.user_serializer import (
+    AddNewUserSerializer,
     Confirm2FASerializer,
     FinalizeLogin2FASerializer,
     InitiateLoginSerializer,
@@ -11,6 +13,8 @@ from auth_module.serializers.user_serializer import (
 )
 from auth_module.services.user_service import UserService
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
+
+from hospital_module import permissions
 
 class AuthViewSet(viewsets.ViewSet):
 
@@ -84,6 +88,53 @@ class AuthViewSet(viewsets.ViewSet):
                 return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+    @action(detail=False, methods=['post'])
+    def login_http(self, request):
+        serializer = InitiateLoginSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            password = serializer.validated_data['password']
+
+            try:
+                result = UserService.initiate_login(email, password)
+
+                access_token = result["access_token"]
+                refresh_token = result["refresh_token"]
+                user_data = result["user"]
+
+                # On prépare la réponse de base
+                response_data = {
+                    "access_token": access_token,
+                    "user": user_data
+                }
+
+                # Si on a des infos hospitalières, on les ajoute
+                if result.get("hospital_id") is not None:
+                    response_data["hopital_id"] = result["hospital_id"]
+
+                if result.get("hospital_ids"):
+                    response_data["hopital_ids"] = result["hospital_ids"]
+
+                response = Response(response_data, status=status.HTTP_200_OK)
+
+
+                # Ajout du refresh token en HttpOnly cookie
+                response.set_cookie(
+                    key="refreshToken",
+                    value=refresh_token,
+                    httponly=True,
+                    secure=False,  # ⚠️ mettre True en prod avec HTTPS
+                    samesite="Strict",
+                    path="/api/auth/refresh_http"  # cookie envoyé uniquement sur ce path
+                )
+
+                return response
+
+            except ValidationError as e:
+                return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
     
     @action(detail=False, methods=['post'])
     def refresh(self, request):
@@ -103,6 +154,44 @@ class AuthViewSet(viewsets.ViewSet):
             }, status=status.HTTP_200_OK)
         except TokenError:
             return Response({"detail": "Refresh token invalide ou expiré."}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+    @action(detail=False, methods=['post'])
+    def refresh_http(self, request):
+        """
+        Endpoint: /auth/refresh/
+        Le refresh token est lu depuis le cookie HttpOnly
+        """
+        refresh_token = request.COOKIES.get("refreshToken")
+
+        if not refresh_token:
+            return Response({"detail": "Refresh token manquant."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            refresh = RefreshToken(refresh_token)
+            access_token = str(refresh.access_token)
+
+            response = Response({"access_token": access_token},
+                                status=status.HTTP_200_OK)
+
+            # Optionnel : rotation → renvoyer un nouveau refresh token
+            response.set_cookie(
+                key="refreshToken",
+                value=str(refresh),
+                httponly=True,
+                secure=False,  # ⚠️ mettre True en prod
+                samesite="Strict",
+                path="/api/auth/refresh_http"
+            )
+
+            return response
+
+        except TokenError:
+            return Response({"detail": "Refresh token invalide ou expiré."},
+                            status=status.HTTP_401_UNAUTHORIZED)
+
+
 
 
     @action(detail=False, methods=['post'])
@@ -151,3 +240,42 @@ class AuthViewSet(viewsets.ViewSet):
             return Response(result, status=status.HTTP_200_OK)
         except ValidationError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+        
+    @action(detail=False, methods=['post'],permission_classes=[IsAuthenticated])
+    def logout_http(self, request):
+        """
+        Déconnexion : supprime le cookie HttpOnly + blackliste le refresh token
+        """
+        try:
+            # Récupérer le refresh token du cookie
+            refresh_token = request.COOKIES.get("refresh_token")
+            if refresh_token:
+                try:
+                    token = RefreshToken(refresh_token)
+                    token.blacklist()  # nécessite simplejwt.token_blacklist activé
+                except TokenError:
+                    pass
+
+            # Supprimer le cookie côté client
+            response = Response({"detail": "Déconnexion réussie"}, status=status.HTTP_200_OK)
+            response.delete_cookie("refresh_token")
+            return response
+
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+    @action(detail=False, methods=['post'],permission_classes=[IsAuthenticated])
+    def add_user(self, request):
+        """POST api/auth/add_user/ - ajoute un utilisateur"""
+        serializer = AddNewUserSerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+                result = UserService.create_user(request.user, **serializer.validated_data)
+                return Response(result, status=status.HTTP_201_CREATED)
+            except ValidationError as e:
+                return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

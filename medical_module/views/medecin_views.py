@@ -60,3 +60,15 @@ class RemoveAffectationView(APIView):
         except (ValidationError, PermissionDenied) as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+
+class MedecinsByHopitalView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, hopital_id: int):
+        try:
+            # Vérification que seul superadmin ou gestionnaire de ce même hôpital
+            meds = MedecinService.list_medecins_by_hopital(request.user, hopital_id)
+            return Response(MedecinBaseSerializer(meds, many=True).data, status=status.HTTP_200_OK)
+        except (ValidationError, PermissionDenied) as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+

@@ -1,6 +1,8 @@
 # cards_module/serializers.py
 from rest_framework import serializers
-from .models import Device, RegistreCarte, LotCarte, LotCarteDetail, SessionScan
+
+from hospital_module.models import Hopital
+from .models import CarteAttribuee, Device, RegistreCarte, LotCarte, LotCarteDetail, SessionScan
 
 class DeviceSerializer(serializers.ModelSerializer):
     class Meta:
@@ -12,21 +14,48 @@ class RegistreCarteSerializer(serializers.ModelSerializer):
         model = RegistreCarte
         read_only_fields = ("numero_serie", "date_enregistrement", "enregistre_par_user")
         fields = "__all__"
+class HopitalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Hopital
+        fields = "__all__"
 
 class LotCarteSerializer(serializers.ModelSerializer):
     class Meta:
         model = LotCarte
         fields = "__all__"
+# serializers.py
+
+class RegistreCarteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RegistreCarte
+        fields = ["id", "uid_rfid", "statut", "date_enregistrement"]
+
 
 class LotCarteDetailSerializer(serializers.ModelSerializer):
+    registre = RegistreCarteSerializer()
+
     class Meta:
         model = LotCarteDetail
-        fields = "__all__"
+        fields = ["id", "registre"]
 
-# class CarteAttribueeSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = CarteAttribuee
-#         fields = "__all__"
+
+class LotCarteHistoriqueSerializer(serializers.ModelSerializer):
+    hopital = HopitalSerializer()
+    livre_par_user = serializers.StringRelatedField()
+    details = LotCarteDetailSerializer(many=True)
+
+    class Meta:
+        model = LotCarte
+        fields = [
+            "id",
+            "numero_lot",
+            "date_livraison",
+            "hopital",
+            "livre_par_user",
+            "details",
+        ]
+
+
 
 class SessionScanCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -38,3 +67,23 @@ class SessionScanDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = SessionScan
         fields = "__all__"
+
+
+class CarteAttribueeSerializer(serializers.ModelSerializer):
+    carte_uid = serializers.CharField(source="carte.uid_rfid", read_only=True)
+    patiente_nom = serializers.CharField(source="patiente.user.nom", read_only=True)
+    patiente_prenom = serializers.CharField(source="patiente.user.prenom", read_only=True)
+
+    class Meta:
+        model = CarteAttribuee
+        fields = [
+            "id",
+            "carte_uid",
+            "patiente_nom",
+            "patiente_prenom",
+            "hopital",
+            "attribuee_par",
+            "date_attribution",
+        ]
+
+

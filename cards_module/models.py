@@ -4,7 +4,8 @@ from django.db import models, transaction
 from django.utils import timezone
 import uuid
 from auth_module.models.user import User
-from hospital_module.models import Hopital  
+from hospital_module.models import Hopital
+from patiente__module.models.patiente import Patiente  
 
 class Device(models.Model):
     nom = models.CharField(max_length=255)
@@ -58,15 +59,6 @@ class LotCarteDetail(models.Model):
         unique_together = ("lot", "registre")
 
 
-# class CarteAttribuee(models.Model):
-#     registre = models.OneToOneField(RegistreCarte, on_delete=models.CASCADE, related_name="attribution")
-#     patiente = models.ForeignKey("patients_module.Patiente", on_delete=models.CASCADE, related_name="cartes")  # adapte import
-#     date_activation = models.DateTimeField(default=timezone.now)
-#     active = models.BooleanField(default=True)
-#     attribue_par_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="cartes_attribuees")
-
-#     def __str__(self):
-#         return f"{self.registre.uid_rfid} -> {self.patiente_id}"
 
 
 class SessionScan(models.Model):
@@ -99,3 +91,38 @@ class SessionScan(models.Model):
         self.statut = "COMPLETED"
         self.closed_at = timezone.now()
         self.save()
+
+
+
+
+
+class CarteAttribuee(models.Model):
+    carte = models.OneToOneField(
+        RegistreCarte,
+        on_delete=models.CASCADE,
+        related_name="attribution"
+    )
+    patiente = models.OneToOneField(
+        Patiente,
+        on_delete=models.CASCADE,
+        related_name="attribution"
+    )
+    hopital = models.ForeignKey(
+        Hopital,
+        on_delete=models.CASCADE,
+        related_name="attributions"
+    )
+    attribuee_par = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="cartes_attribuees"
+    )
+    date_attribution = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "carte_attribuee"
+        unique_together = ("carte", "patiente")
+
+    def __str__(self):
+        return f"Carte {self.carte.uid_rfid} → {self.patiente.user.nom}"

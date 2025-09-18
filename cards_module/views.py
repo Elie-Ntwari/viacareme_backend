@@ -1,3 +1,4 @@
+import stat
 from uuid import UUID
 from django.shortcuts import render
 
@@ -8,8 +9,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from hospital_module.models import Hopital
-from .serializers import SessionScanCreateSerializer, SessionScanDetailSerializer, RegistreCarteSerializer, LotCarteSerializer
-from .services import SessionService, CardService, LotService
+from hospital_module.permissions import IsSuperAdmin
+from .serializers import CarteAttribueeSerializer, LotCarteHistoriqueSerializer, SessionScanCreateSerializer, SessionScanDetailSerializer, RegistreCarteSerializer, LotCarteSerializer
+from .services import AttributionService, SessionService, CardService, LotService
 from .models import Device, SessionScan, RegistreCarte, LotCarte
 from auth_module.models.user import User
 from django.shortcuts import get_object_or_404
@@ -116,3 +118,94 @@ class CreateLotView(APIView):
             "cartes_uids": cartes_uids,
             "status": "success"
         }, status=status.HTTP_201_CREATED)
+
+
+class LotHistoriqueView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        if is_superadmin(user):
+            lots = LotCarte.objects.all().prefetch_related(
+                "details__registre", "hopital", "livre_par_user"
+            )
+        elif is_gestionnaire(user):
+            # récupérer les hôpitaux où ce user est gestionnaire
+            hopitaux_ids = user.gestionnaire.hopital_id if hasattr(user, "gestionnaire") else None
+            if not hopitaux_ids:
+                return Response({"message": "Aucun hôpital assigné"}, status=status.HTTP_403_FORBIDDEN)
+
+            lots = LotCarte.objects.filter(
+                hopital_id=hopitaux_ids
+            ).prefetch_related("details__registre", "hopital")
+        else:
+            return Response({"message": "Accès refusé"}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = LotCarteHistoriqueSerializer(lots, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class ListAVailableCardsViewByHopital(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, hopital_id: int):
+        user = request.user
+
+        if is_superadmin(user):
+            cartes = RegistreCarte.objects.all()
+          
+
+        elif is_gestionnaire(user):
+            # Vérifier que ce gestionnaire appartient bien à cet hôpital
+            if not hasattr(user, "gestionnaire") or user.gestionnaire.hopital_id != hopital_id:
+                return Response({"message": "Accès refusé à cet hôpital."}, status=status.HTTP_403_FORBIDDEN)
+
+            cartes = RegistreCarte.objects.filter(
+                lot_details__lot__hopital_id=hopital_id
+            ).select_related("enregistre_par_user").distinct()
+        else:
+            return Response({"message": "Accès refusé"}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = RegistreCarteSerializer(cartes, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ListLivreeCardsViewByHopital(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, hopital_id: int):
+        user = request.user
+
+        if is_superadmin(user):
+            return Response({"message": "Accès refusé aux superadmins."}, status=status.HTTP_403_FORBIDDEN)  
+
+        elif is_gestionnaire(user):
+            # Vérifier que ce gestionnaire appartient bien à cet hôpital
+            if not hasattr(user, "gestionnaire") or user.gestionnaire.hopital_id != hopital_id:
+                return Response({"message": "Accès refusé à cet hôpital."}, status=status.HTTP_403_FORBIDDEN)
+
+            cartes = RegistreCarte.objects.filter(
+                statut="LIVREE",
+                lot_details__lot__hopital_id=hopital_id
+            ).select_related("enregistre_par_user").distinct()
+        else:
+            return Response({"message": "Accès refusé"}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = RegistreCarteSerializer(cartes, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    
+
+class AttribuerCarteView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        carte_id = request.data.get("carte_id")
+        patiente_id = request.data.get("patiente_id")
+
+        attribution, error = AttributionService.attribuer_carte(user, carte_id, patiente_id)
+        if error:
+            return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(CarteAttribueeSerializer(attribution).data, status=status.HTTP_201_CREATED)

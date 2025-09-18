@@ -26,6 +26,7 @@ class CreateHopitalSerializer(serializers.Serializer):
     adresse = serializers.CharField(max_length=255)
     ville = serializers.CharField(max_length=100)
     province = serializers.CharField(max_length=100)
+    zone_de_sante = serializers.CharField(max_length=100)
     telephone = serializers.CharField(max_length=20, required=False)
     email = serializers.EmailField(required=False)
     latitude = serializers.FloatField(required=False)

@@ -13,6 +13,7 @@ from medical_module.views.medecin_views import (
 urlpatterns = [
     path("medecins/create-or-assign", MedecinCreateOrAssignView.as_view(), name="medecin-create-assign"),
     path("medecins/by-hopital/<int:hopital_id>", MedecinsByHopitalView.as_view(), name="medecins-by-hopital"),
-    path("medecins", MedecinListPaginatedView.as_view(), name="medecins-list-paginated"),
+    path("medecins/", MedecinListPaginatedView.as_view(), name="medecins-list-paginated"),
     path("medecins/<int:medecin_id>/remove-affectation/<int:hopital_id>", RemoveAffectationView.as_view(), name="medecin-remove-affectation"),
+    path("medecins/hopital/<int:hopital_id>/", MedecinsByHopitalView.as_view(), name="medecins-by-hopital"),
 ]

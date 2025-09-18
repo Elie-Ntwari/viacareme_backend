@@ -24,6 +24,13 @@ class HopitalService:
         if User.objects.filter(email__iexact=gestionnaire_data['email']).exists():
             return Response({"error": f"L'utilisateur avec l'email '{gestionnaire_data['email']}' existe déjà."},
                             status=status.HTTP_400_BAD_REQUEST)
+            
+            
+        # Vérifier doublon email hopital
+        if Hopital.objects.filter(email__iexact=hopital_data['email']).exists():
+            return Response({"error": f"L'hôpital avec l'email '{hopital_data['email']}' existe déjà."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        
         gestDefaultPassword = "1234567890"
         #Hash password
         gestionnaire_data['password'] = make_password(gestDefaultPassword)    
@@ -41,7 +48,8 @@ class HopitalService:
 
     @staticmethod
     def list_hopitaux():
-        hopitaux = Hopital.objects.all()
+        hopitaux = Hopital.objects.all().order_by("-id")
+
         if not hopitaux.exists():
             return Response({"message": "Aucun hôpital trouvé."}, status=status.HTTP_200_OK)
         return hopitaux

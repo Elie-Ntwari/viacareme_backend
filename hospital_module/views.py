@@ -43,9 +43,8 @@ class HopitalViewSet(viewsets.ViewSet):
         )
         return response
 
-
-    @action(detail=True, methods=['post'], url_path='add-gestionnaire', 
-            permission_classes=[IsGestionnaireAdminLocal | IsSuperAdmin])
+    @action(detail=True, methods=['post'], url_path='add-gestionnaire'
+            )
     def add_gestionnaire(self, request, pk=None):
         """POST /api/hospitals/{id}/add-gestionnaire/ - Ajouter un gestionnaire à un hôpital"""
         

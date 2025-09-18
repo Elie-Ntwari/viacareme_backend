@@ -6,14 +6,17 @@ from auth_module.models.user import User
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 import cloudinary.uploader
 import secrets
+from typing import Optional, List
+from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.pagination import PageNumberPagination
-
+from rest_framework.response import Response
 from auth_module.repositories.user_repository import UserRepository
 from auth_module.repositories.verification_repository import VerificationRepository
 from auth_module.serializers.user_serializer import UserFullSerializer
 from auth_module.services.totp_service import TOTPService
 from auth_module.services.email_service import EmailService
+from hospital_module.models import Gestionnaire
 
 # Configs
 ACTIVATION_CODE_EXP_MINUTES = 15
@@ -103,6 +106,51 @@ class UserService:
 
     @staticmethod
     @transaction.atomic
+    def create_user(creer_par, nom, postnom, prenom, email, telephone=None, photo_file=None, role="SUPERADMIN"):
+        if UserRepository.get_by_email(email):
+            raise ValidationError(f"Un utilisateur avec {email} existe déjà.")
+
+        if role not in dict(User.ROLE_CHOICES).keys():
+            raise ValidationError(f"Rôle invalide. Choisissez parmi {', '.join(dict(User.ROLE_CHOICES).keys())}.")
+
+        # Vérification des droits
+        if creer_par.role not in ["SUPERADMIN", "GESTIONNAIRE"]:
+            raise ValidationError("Vous n'avez pas les droits pour créer un utilisateur.")
+
+        # Upload photo
+        photo_url = None
+        if photo_file:
+            try:
+                upload_result = cloudinary.uploader.upload(
+                    photo_file,
+                    folder="jali_images/users/profile_photos",
+                    resource_type="image"
+                )
+                photo_url = upload_result.get("secure_url")
+            except Exception as e:
+                raise ValidationError(f"Erreur upload photo: {str(e)}")
+
+        # Création avec mot de passe par défaut
+        hashed = make_password("1234567890")
+
+        user = UserRepository.create_user(
+            nom=nom,
+            postnom=postnom,
+            prenom=prenom,
+            email=email,
+            telephone=telephone,
+            photo_url=photo_url,
+            password=hashed,
+            role=role,
+            est_actif=True,
+            est_verifie=True,
+            deux_facteurs_active=False,
+        )
+
+        return {"message": "Compte créé avec succès.", "user_id": user.id}
+
+    @staticmethod
+    @transaction.atomic
     def activate_account(email, code):
         user = UserRepository.get_by_email(email)
         if not user:
@@ -147,15 +195,58 @@ class UserService:
         
         # Sérialiser l'utilisateur
         user_data = UserFullSerializer(user).data
+        
+      
+        # Valeurs par défaut
+        hospital_info = {
+            "hospital_id": None,
+            "hospital_ids": []
+        }
+
+        # Injecter infos liées aux hôpitaux selon rôle
+        if user.role == "GESTIONNAIRE":
+            try:
+                hospital_info["hospital_id"] = user.gestionnaire.hopital.id
+            except Exception:
+                hospital_info["hospital_id"] = None
+
+        elif user.role == "MEDECIN":
+            try:
+                hospital_info["hospital_ids"] = list(
+                    user.medecin.hopitaux.values_list("id", flat=True)
+                )
+            except Exception:
+                hospital_info["hospital_ids"] = []
 
         return {
-           "access_token": access_token,
-           "refresh_token": refresh_token,
-           "user": user_data,
-        #    "user_id": user.id,
-        #    "user_email": user.email,
-        #    "role": user.role,
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "user": user_data,
+            **hospital_info  # fusionne les clés hospital_id / hospital_ids
         }
+    
+    
+    
+    def get_related_hospitals(self) -> Optional[dict]:
+        """
+        Retourne les hôpitaux liés à l'utilisateur selon son rôle :
+        - GESTIONNAIRE : un seul hospital_id
+        - MEDECIN : liste des hospital_ids
+        - sinon : None
+        """
+        if self.role == "GESTIONNAIRE":
+            try:
+                hospital_id = self.gestionnaire.hopital.id
+                return {"hospital_id": hospital_id}
+            except Gestionnaire.DoesNotExist:
+                return {"hospital_id": None}
+
+        elif self.role == "MEDECIN":
+            # si tu as une table Medecin avec une relation ManyToMany Hopital
+            hospital_ids = list(self.medecin.hopitaux.values_list("id", flat=True))
+            return {"hospital_ids": hospital_ids}
+
+        return None
     
     @staticmethod
     def confirm_2fa_setup(email, setup_token, totp_code):

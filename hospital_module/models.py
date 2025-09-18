@@ -10,6 +10,7 @@ class Hopital(models.Model):
     adresse = models.CharField(max_length=255)
     ville = models.CharField(max_length=100)
     province = models.CharField(max_length=100)
+    zone_de_sante = models.CharField(max_length=100, blank=True, null=True)
     telephone = models.CharField(max_length=20, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     latitude = models.FloatField(blank=True, null=True)

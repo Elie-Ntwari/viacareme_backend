@@ -25,6 +25,33 @@ class UserFullSerializer(serializers.ModelSerializer):
             "role",
             "date_creation",
         ]
+        
+class AddNewUserSerializer(serializers.Serializer):
+    nom = serializers.CharField(max_length=150)
+    postnom = serializers.CharField(max_length=150)
+    prenom = serializers.CharField(max_length=150)
+    email = serializers.EmailField()
+    telephone = serializers.CharField(
+        max_length=20, required=False, allow_null=True, allow_blank=True
+    )
+    photo_file = serializers.ImageField(required=False, allow_null=True)
+    role = serializers.ChoiceField(
+        choices=["SUPERADMIN", "GESTIONNAIRE", "MEDECIN", "PATIENTE"], 
+        default="GESTIONNAIRE"
+    )
+
+    def validate_email(self, value: str) -> str:
+        return value.strip().lower()
+
+    def validate_nom(self, value: str) -> str:
+        return value.strip().title()
+
+    def validate_postnom(self, value: str) -> str:
+        return value.strip().title()
+
+    def validate_prenom(self, value: str) -> str:
+        return value.strip().title()
+
 
 
 class RegisterUserSerializer(serializers.Serializer):

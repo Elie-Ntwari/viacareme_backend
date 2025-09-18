@@ -26,6 +26,7 @@ class HopitalRepository:
             adresse=hopital_data['adresse'],
             ville=hopital_data['ville'],
             province=hopital_data['province'],
+            zone_de_sante=hopital_data.get('zone_de_sante'),
             telephone=hopital_data.get('telephone'),
             email=hopital_data.get('email'),
             latitude=hopital_data.get('latitude'),

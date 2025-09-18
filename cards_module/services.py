@@ -7,8 +7,9 @@ from rest_framework import status
 
 import random
 
-from cards_module.models import LotCarte, SessionScan
+from cards_module.models import CarteAttribuee, LotCarte, LotCarteDetail, RegistreCarte, SessionScan
 from hospital_module.repositories import HopitalRepository
+from patiente__module.models.patiente import Patiente
 from .repositories import RegistreRepository, SessionRepository, LotRepository
 from datetime import timedelta
 
@@ -55,6 +56,7 @@ class CardService:
 
             registre = RegistreRepository.create(uid, user=session.lance_par_user)
             registre.statut = "ENREGISTREE"
+            registre.est_viacareme = True
             registre.save()
             SessionService.close_session(session)
 
@@ -64,36 +66,6 @@ class CardService:
                 "status": "success"
             }, status=status.HTTP_200_OK)
 
-        # Logic for ATTRIBUTION - currently commented
-        # if session.type == "ATTRIBUTION":
-        #     if not registre:
-        #         return Response({"message": "Carte non trouvée dans registre."}, status=status.HTTP_404_NOT_FOUND)
-        #
-        #     if registre.statut == "AFFECTEE":
-        #         return Response({"message": "Carte déjà attribuée."}, status=status.HTTP_400_BAD_REQUEST)
-        #
-        #     from patients_module.models import Patiente
-        #     try:
-        #         pat = Patiente.objects.get(id=session.cible_id)
-        #     except Patiente.DoesNotExist:
-        #         return Response({"message": "Patiente cible introuvable."}, status=status.HTTP_404_NOT_FOUND)
-        #
-        #     CarteAttribuee.objects.create(
-        #         registre=registre,
-        #         patiente=pat,
-        #         attribue_par_user=session.lance_par_user
-        #     )
-        #
-        #     registre.statut = "AFFECTEE"
-        #     registre.save()
-        #     SessionService.close_session(session)
-        #
-        #     return Response({
-        #         "action": "assigned",
-        #         "registre_id": registre.id,
-        #         "patiente_id": pat.id,
-        #         "status": "success"
-        #     }, status=status.HTTP_200_OK)
 
         # Si type de session inconnu
         return Response({"message": "Type de session inconnu."}, status=status.HTTP_400_BAD_REQUEST)
@@ -136,3 +108,63 @@ class LotService:
             reg.save()
 
         return lot, None, cartes_uids
+
+
+
+
+
+class AttributionService:
+    @staticmethod
+    @transaction.atomic
+    def attribuer_carte(user, carte_id, patiente_id):
+        # Vérifier si gestionnaire
+        if not user.role == "GESTIONNAIRE":
+            return None, "Seul un gestionnaire peut attribuer une carte."
+
+        # Vérifier carte
+        try:
+            carte = RegistreCarte.objects.select_for_update().get(id=carte_id)
+        except RegistreCarte.DoesNotExist:
+            return None, "Carte introuvable."
+
+        # Vérifier patiente
+        try:
+            patiente = Patiente.objects.get(id=patiente_id)
+        except Patiente.DoesNotExist:
+            return None, "Patiente introuvable."
+
+        # Vérifier que la carte est bien Viacareme
+        if not carte.est_viacareme:
+            return None, "Cette carte n'est pas une carte Viacareme."
+
+        # Vérifier que la carte est livrée
+        if carte.statut != "LIVREE":
+            return None, "Cette carte n'est pas disponible (statut non LIVREE)."
+
+        # Vérifier que la carte appartient au lot de l'hôpital du gestionnaire
+        hopital_id = user.gestionnaire.hopital_id
+        if not LotCarteDetail.objects.filter(lot__hopital_id=hopital_id, registre=carte).exists():
+            return None, "Cette carte n'appartient pas au lot de votre hôpital."
+
+        # Vérifier si déjà attribuée
+        if CarteAttribuee.objects.filter(carte=carte).exists():
+            return None, "Cette carte est déjà attribuée."
+
+        if CarteAttribuee.objects.filter(patiente=patiente).exists():
+            return None, "Cette patiente a déjà une carte attribuée."
+
+        # Créer attribution
+        attribution = CarteAttribuee.objects.create(
+            carte=carte,
+            patiente=patiente,
+            hopital=patiente.creer_a_hopital,
+            attribuee_par=user
+        )
+
+        # Mettre à jour carte + patiente
+        carte.statut = "AFFECTEE"
+        carte.save()
+        patiente.has_carte = True
+        patiente.save()
+
+        return attribution, None

@@ -74,12 +74,7 @@ class MedecinService:
         return med
 
 
-    @staticmethod
-    def list_medecins_by_hopital(hopital_id: int):
-        hopital = MedecinRepository.get_hopital_by_id(hopital_id)
-        if not hopital:
-            raise ValidationError("Hôpital introuvable.")
-        return MedecinRepository.list_medecins_by_hopital(hopital)
+
 
     @staticmethod
     def list_medecins_paginated(request):
@@ -101,3 +96,13 @@ class MedecinService:
         if not med:
             raise ValidationError("Médecin introuvable.")
         return MedecinRepository.remove_affectation(med, hopital)
+    
+    @staticmethod
+    def list_medecins_by_hopital(request_user: User, hopital_id: int):
+        # Vérifie autorisation
+        MedecinService._assert_user_can_manage_hopital(request_user, hopital_id)
+
+        hopital = MedecinRepository.get_hopital_by_id(hopital_id)
+        if not hopital:
+            raise ValidationError("Hôpital introuvable.")
+        return MedecinRepository.list_medecins_by_hopital(hopital)

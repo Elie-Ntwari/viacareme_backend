@@ -12,6 +12,7 @@ class Patiente(models.Model):
     numero_identification = models.CharField(max_length=100, unique=True, null=True, blank=True)
     date_inscription = models.DateTimeField(default=timezone.now)
     has_carte = models.BooleanField(default=False)
+    creer_a_hopital = models.ForeignKey("hospital_module.Hopital", on_delete=models.SET_NULL, null=True, blank=True, related_name="patientes_creees")
   
     class Meta:
         db_table = "patiente"
