@@ -92,17 +92,17 @@ class UserService:
             photo_url=photo_url,  # corrigé
             password=hashed,
             role=role,
-            est_actif=False,
-            est_verifie=False,
+            est_actif=True,
+            est_verifie=True,
             deux_facteurs_active=False,
         )
 
-        code = str(secrets.randbelow(900000) + 100000)
-        VerificationRepository.create_code(user, code, canal="EMAIL", expiration_minutes=ACTIVATION_CODE_EXP_MINUTES)
+        # code = str(secrets.randbelow(900000) + 100000)
+        # VerificationRepository.create_code(user, code, canal="EMAIL", expiration_minutes=ACTIVATION_CODE_EXP_MINUTES)
 
-        EmailService.send_activation_email(user.email, code)
+        # EmailService.send_activation_email(user.email, code)
 
-        return {"message": "Compte créé. Vérifiez votre email pour activer votre compte.", "user_id": user.id}
+        return {"message": "Compte créé avec succès", "user_id": user.id}
 
     @staticmethod
     @transaction.atomic

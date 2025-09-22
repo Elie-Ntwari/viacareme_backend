@@ -15,6 +15,7 @@ class UserRepository:
         Utilise une transaction pour éviter les incohérences.
         """
         try:
+            
             return User.objects.create(**kwargs)
         except IntegrityError as e:
             raise ValueError(f"Erreur lors de la création de l'utilisateur : {e}")
