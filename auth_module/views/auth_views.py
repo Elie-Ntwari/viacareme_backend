@@ -10,6 +10,7 @@ from auth_module.serializers.user_serializer import (
     InitiateLoginSerializer,
     RegisterUserSerializer,
     UserFullSerializer,
+    InitiateLoginByPhoneSerializer
 )
 from auth_module.services.user_service import UserService
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
@@ -276,6 +277,26 @@ class AuthViewSet(viewsets.ViewSet):
             try:
                 result = UserService.create_user(request.user, **serializer.validated_data)
                 return Response(result, status=status.HTTP_201_CREATED)
+            except ValidationError as e:
+                return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    
+    
+
+    @action(detail=False, methods=['post'])
+    def login_phone(self, request):
+        """
+        POST /auth/login_phone/
+        Body: { "telephone": "...", "password": "..." }
+        """
+        serializer = InitiateLoginByPhoneSerializer(data=request.data)
+        if serializer.is_valid():
+            telephone = serializer.validated_data['telephone']
+            password = serializer.validated_data['password']
+            try:
+                result = UserService.initiate_login_by_phone(telephone, password)
+                return Response(result, status=status.HTTP_200_OK)
             except ValidationError as e:
                 return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

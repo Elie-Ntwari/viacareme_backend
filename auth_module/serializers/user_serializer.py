@@ -128,3 +128,14 @@ class FinalizeLogin2FASerializer(serializers.Serializer):
 
     def validate_totp_code(self, value: str) -> str:
         return validate_code(value)
+    
+    
+# auth_module/serializers/user_serializer.py
+
+class InitiateLoginByPhoneSerializer(serializers.Serializer):
+    telephone = serializers.CharField(max_length=20)
+    password = serializers.CharField(write_only=True)
+
+    def validate_telephone(self, value: str) -> str:
+        return value.strip()
+

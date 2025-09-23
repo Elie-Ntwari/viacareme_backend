@@ -322,3 +322,50 @@ class UserService:
             return {"message": "Déconnexion réussie."}
         except Exception:
             raise ValidationError("Token invalide ou déjà expiré.")
+                
+        
+
+        
+        
+
+
+
+    @staticmethod
+    def initiate_login_by_phone(telephone, password):
+        try:
+            user = User.objects.get(telephone=telephone)
+        except User.DoesNotExist:
+            raise ValidationError("Identifiants invalides.")
+
+        if not check_password(password, user.password):
+            raise ValidationError("Identifiants invalides.")
+
+        if not user.est_actif:
+            raise ValidationError("Compte inactif, activez-le via email.")
+
+        # Génération tokens JWT
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+        refresh_token = str(refresh)
+
+        user_data = UserFullSerializer(user).data
+
+        # Infos hôpitaux si applicable
+        hospital_info = {"hospital_id": None, "hospital_ids": []}
+        if user.role == "GESTIONNAIRE":
+            try:
+                hospital_info["hospital_id"] = user.gestionnaire.hopital.id
+            except Exception:
+                pass
+        elif user.role == "MEDECIN":
+            try:
+                hospital_info["hospital_ids"] = list(user.medecin.hopitaux.values_list("id", flat=True))
+            except Exception:
+                pass
+
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "user": user_data,
+            **hospital_info
+        }
