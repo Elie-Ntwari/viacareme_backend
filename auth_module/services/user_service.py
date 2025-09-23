@@ -37,6 +37,35 @@ def _validate_image_file(file_obj):
     return True
 
 
+def normalize_phone(phone: str) -> str:
+    """
+    Transforme le numéro au format +2439... (pour la RDC)
+    Exemples acceptés :
+    - +243 97777...
+    - +24397777...
+    - 097777...
+    - 97777...
+    Retourne toujours +2439...
+    """
+    import re
+    if not phone:
+        return None
+    phone = re.sub(r"\D", "", phone)  # retire tout sauf chiffres
+    if phone.startswith("243"):
+        phone = "+" + phone
+    elif phone.startswith("0"):
+        phone = "+243" + phone[1:]
+    elif phone.startswith("9") and len(phone) == 8:
+        phone = "+243" + phone
+    elif phone.startswith("9") and len(phone) == 9:
+        phone = "+243" + phone
+    elif phone.startswith("+243"):
+        phone = "+243" + phone[4:]
+    else:
+        # format inconnu, retourne tel quel
+        phone = "+243" + phone[-9:] if len(phone) >= 9 else phone
+    return phone
+
 class UserService:
 
 
@@ -83,12 +112,15 @@ class UserService:
             raise ValidationError("Le mot de passe est requis.")
         hashed = make_password(password)
 
+        # Normalisation du téléphone
+        telephone_norm = normalize_phone(telephone) if telephone else None
+
         user = UserRepository.create_user(
             nom=nom,
             postnom=postnom,
             prenom=prenom,
             email=email,
-            telephone=telephone,
+            telephone=telephone_norm,
             photo_url=photo_url,  # corrigé
             password=hashed,
             role=role,
@@ -133,12 +165,15 @@ class UserService:
         # Création avec mot de passe par défaut
         hashed = make_password("1234567890")
 
+        # Normalisation du téléphone
+        telephone_norm = normalize_phone(telephone) if telephone else None
+
         user = UserRepository.create_user(
             nom=nom,
             postnom=postnom,
             prenom=prenom,
             email=email,
-            telephone=telephone,
+            telephone=telephone_norm,
             photo_url=photo_url,
             password=hashed,
             role=role,
