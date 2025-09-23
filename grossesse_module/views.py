@@ -10,7 +10,7 @@ from .services.otp_service import OTPService
 from .services.grossesse_service import GrossesseService, DossierService
 
 class UnlockPatiente(APIView):
-    permission_classes = [IsAuthenticated]
+ 
 
     def post(self, request, patiente_id):
         try:
