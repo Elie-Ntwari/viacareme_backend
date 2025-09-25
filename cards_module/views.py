@@ -35,7 +35,7 @@ class StartScanSessionView(APIView):
         user = request.user
         typ = request.data.get("type")
         device_id = request.data.get("device_id")
-        hopital_id = request.data.get("hopital_id")
+    # hopital_id = request.data.get("hopital_id")  # champ ignoré
         cible_id = request.data.get("cible_id", None)
 
         # role check
@@ -45,12 +45,11 @@ class StartScanSessionView(APIView):
             return Response({"detail": "Accès refusé"}, status=status.HTTP_403_FORBIDDEN)
 
         device = get_object_or_404(Device, id=device_id, actif=True)
-        hopital = get_object_or_404(Hopital, id=hopital_id, actif=True)  # ✅ on récupère l’objet
+    # hopital = get_object_or_404(Hopital, id=hopital_id, actif=True)  # champ ignoré
 
         # create session
         session = SessionService.create_session(
             type=typ,
-            hopital=hopital,  # ✅ on passe bien l’objet
             device=device,
             user=user,
             cible_id=cible_id
@@ -62,7 +61,7 @@ class StartScanSessionView(APIView):
 
 
 class ReceiveScanView(APIView):
-    permission_classes = [IsAuthenticated]
+
 
     def post(self, request):
         token = request.data.get("token")
@@ -148,21 +147,14 @@ class LotHistoriqueView(APIView):
 class ListAVailableCardsViewByHopital(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, hopital_id: int):
+    def get(self, request):
         user = request.user
 
         if is_superadmin(user):
             cartes = RegistreCarte.objects.all()
           
 
-        elif is_gestionnaire(user):
-            # Vérifier que ce gestionnaire appartient bien à cet hôpital
-            if not hasattr(user, "gestionnaire") or user.gestionnaire.hopital_id != hopital_id:
-                return Response({"message": "Accès refusé à cet hôpital."}, status=status.HTTP_403_FORBIDDEN)
-
-            cartes = RegistreCarte.objects.filter(
-                lot_details__lot__hopital_id=hopital_id
-            ).select_related("enregistre_par_user").distinct()
+      
         else:
             return Response({"message": "Accès refusé"}, status=status.HTTP_403_FORBIDDEN)
 

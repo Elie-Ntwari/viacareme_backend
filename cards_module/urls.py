@@ -7,7 +7,7 @@ urlpatterns = [
     path("cards/scan/", ReceiveScanView.as_view(), name="receive_scan"),
     path("cards/lots/", CreateLotView.as_view(), name="create_lot"),
     path("cards/lots/history/", LotHistoriqueView.as_view(), name="lot_history"),
-    path("cards/<int:hopital_id>/",ListAVailableCardsViewByHopital.as_view(), name="list_available_cards_by_hopital"),  
+    path("cards/",ListAVailableCardsViewByHopital.as_view(), name="list_available_cards_by_hopital"),  
     path("cards/<int:hopital_id>/available/",ListLivreeCardsViewByHopital.as_view(), name="list_available_cards_by_hopital"),
     path("cards/deliver/",AttribuerCarteView.as_view(), name="delivered_cards"),
 ]

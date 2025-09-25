@@ -8,10 +8,10 @@ from hospital_module.models import Hopital
 from patiente__module.models.patiente import Patiente  
 
 class Device(models.Model):
-    nom = models.CharField(max_length=255)
-    numero_serie = models.CharField(max_length=255, unique=True)
+    nom = models.CharField(max_length=255,null=True, blank=True)
+    numero_serie = models.CharField(max_length=255, unique=True, null=True, blank=True  )
     cle_authentification = models.CharField(max_length=255, blank=True, null=True)
-    hopital = models.ForeignKey(Hopital, on_delete=models.CASCADE, related_name="devices")
+    hopital = models.ForeignKey(Hopital, on_delete=models.CASCADE, related_name="devices",null=True, blank=True )
     actif = models.BooleanField(default=True)
     date_installation = models.DateTimeField(default=timezone.now)
 
@@ -77,7 +77,7 @@ class SessionScan(models.Model):
     statut = models.CharField(max_length=20, choices=STATUS, default="PENDING")
     token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     cible_id = models.IntegerField(null=True, blank=True)        # patient id si ATTRIBUTION
-    hopital = models.ForeignKey(Hopital, on_delete=models.CASCADE, related_name="sessions")
+    # hopital = models.ForeignKey(Hopital, on_delete=models.CASCADE, related_name="sessions")
     device = models.ForeignKey(Device, on_delete=models.SET_NULL, null=True, related_name="sessions")
     lance_par_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="sessions_lancees")
     created_at = models.DateTimeField(auto_now_add=True)

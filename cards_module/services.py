@@ -17,11 +17,10 @@ SESSION_DEFAULT_SECONDS = 120  # durée session
 
 class SessionService:
     @staticmethod
-    def create_session(type, hopital, device, user, cible_id=None, expires_in=SESSION_DEFAULT_SECONDS):
+    def create_session(type, device, user, cible_id=None, expires_in=SESSION_DEFAULT_SECONDS):
         expires_at = timezone.now() + timedelta(seconds=expires_in)
         s = SessionScan.objects.create(
             type=type,
-            hopital=hopital,
             device=device,
             lance_par_user=user,
             cible_id=cible_id,

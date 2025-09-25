@@ -61,7 +61,7 @@ class SessionScanCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = SessionScan
         read_only_fields = ("token", "statut", "created_at")
-        fields = ("id", "type", "cible_id", "hopital", "device", "lance_par_user", "expires_at", "token", "statut")
+        fields = ("id", "type", "cible_id", "device", "lance_par_user", "expires_at", "token", "statut")
 
 class SessionScanDetailSerializer(serializers.ModelSerializer):
     class Meta:
