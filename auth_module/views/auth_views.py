@@ -18,6 +18,40 @@ from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from hospital_module import permissions
 
 class AuthViewSet(viewsets.ViewSet):
+    @action(detail=False, methods=['put', 'patch'], permission_classes=[IsAuthenticated])
+    def update_user(self, request):
+        """
+        PUT/PATCH /auth/update-user/
+        Body: { "user_id": ..., autres champs à modifier }
+        """
+        user_id = request.data.get("user_id")
+        if not user_id:
+            return Response({"detail": "user_id requis."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        from auth_module.models.user import User
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({"detail": "Utilisateur introuvable."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Vérification email déjà utilisé par un autre utilisateur
+        new_email = request.data.get("email")
+        if new_email and new_email != user.email:
+            if User.objects.filter(email=new_email).exclude(id=user_id).exists():
+                return Response({"detail": "Un utilisateur avec cet Email existe déjà."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Liste des champs modifiables
+        modifiable_fields = ["nom", "postnom", "prenom", "email", "telephone", "photo_url", "role"]
+        updated = False
+        for field in modifiable_fields:
+            if field in request.data:
+                setattr(user, field, request.data[field])
+                updated = True
+        if updated:
+            user.save()
+            return Response({"message": "Utilisateur modifié avec succès."}, status=status.HTTP_200_OK)
+        else:
+            return Response({"detail": "Aucune donnée à modifier."}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get'])
     def list_users(self, request):  
