@@ -6,6 +6,7 @@ from django.db import transaction
 from auth_module.models.user import User
 from patiente__module.models.patiente import Patiente
 from hospital_module.models import Hopital
+from django.contrib.auth.hashers import make_password
 
 
 class PatienteRepository:
@@ -28,6 +29,7 @@ class PatienteRepository:
             postnom=postnom or "",
             prenom=prenom,
             email=email,
+            password= make_password("1234567890"),
             telephone=telephone,
             role="PATIENTE",
             est_actif=True,

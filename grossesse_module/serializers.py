@@ -4,7 +4,7 @@ from .models import Grossesse, DossierObstetrical
 class GrossesseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Grossesse
-        fields = "date_debut","dpa","statut"
+        fields = "id","date_debut","dpa","statut"
         read_only_fields = ("id", "created_at")
 
 
