@@ -232,12 +232,11 @@ class UserService:
         user_data = UserFullSerializer(user).data
         
       
-        # Valeurs par défaut
+         # Valeurs par défaut
         hospital_info = {
             "hospital_id": None,
             "hospital_name": None,
-            "hospital_ids": [],
-            "hospital_names": []
+            "hopitaux": []  # ⚡ tableau [{id, nom}] pour médecin
         }
 
         # Injecter infos liées aux hôpitaux selon rôle
@@ -251,13 +250,14 @@ class UserService:
                 hospital_info["hospital_name"] = None
 
         elif user.role == "MEDECIN":
-            try:
-                hopitaux = user.medecin.hopitaux.all()
-                hospital_info["hospital_ids"] = [h.id for h in hopitaux]
-                hospital_info["hospital_names"] = [h.nom for h in hopitaux]
-            except Exception:
-                hospital_info["hospital_ids"] = []
-                hospital_info["hospital_names"] = []
+                try:
+                    hopitaux = user.profil_medecin.hopitaux.all()
+                    hospital_info["hopitaux"] = [
+                        {"id": h.id, "nom": h.nom} for h in hopitaux
+                    ]
+                except Exception:
+                    hospital_info["hopitaux"] = []
+
 
         return {
             "access_token": access_token,

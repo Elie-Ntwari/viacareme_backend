@@ -123,6 +123,7 @@ class AuthViewSet(viewsets.ViewSet):
                 return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+    # views.py
     @action(detail=False, methods=['post'])
     def login_http(self, request):
         serializer = InitiateLoginSerializer(data=request.data)
@@ -142,24 +143,24 @@ class AuthViewSet(viewsets.ViewSet):
                     "user": user_data
                 }
 
-                # Ajout des infos hospitalières si présentes
+                # Gestionnaire
                 if result.get("hospital_id") is not None:
                     response_data["hospital_id"] = result["hospital_id"]
                 if result.get("hospital_name") is not None:
                     response_data["hospital_name"] = result["hospital_name"]
-                if result.get("hospital_ids"):
-                    response_data["hospital_ids"] = result["hospital_ids"]
-                if result.get("hospital_names"):
-                    response_data["hospital_names"] = result["hospital_names"]
+
+                # Médecin
+                if result.get("hopitaux"):
+                    response_data["hopitaux"] = result["hopitaux"]
 
                 response = Response(response_data, status=status.HTTP_200_OK)
 
-                # Ajout du refresh token en HttpOnly cookie
+                # Refresh token en HttpOnly cookie
                 response.set_cookie(
                     key="refreshToken",
                     value=refresh_token,
                     httponly=True,
-                    secure=True,  # ⚠️ mettre True en prod avec HTTPS
+                    secure=True,  # ⚠️ True en prod avec HTTPS
                     samesite="Strict",
                     path="/api/auth/refresh_http"
                 )
@@ -170,7 +171,7 @@ class AuthViewSet(viewsets.ViewSet):
                 return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
     
     @action(detail=False, methods=['post'])
     def refresh(self, request):
