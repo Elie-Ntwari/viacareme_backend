@@ -235,29 +235,35 @@ class UserService:
         # Valeurs par défaut
         hospital_info = {
             "hospital_id": None,
-            "hospital_ids": []
+            "hospital_name": None,
+            "hospital_ids": [],
+            "hospital_names": []
         }
 
         # Injecter infos liées aux hôpitaux selon rôle
         if user.role == "GESTIONNAIRE":
             try:
-                hospital_info["hospital_id"] = user.gestionnaire.hopital.id
+                hopital = user.gestionnaire.hopital
+                hospital_info["hospital_id"] = hopital.id
+                hospital_info["hospital_name"] = hopital.nom
             except Exception:
                 hospital_info["hospital_id"] = None
+                hospital_info["hospital_name"] = None
 
         elif user.role == "MEDECIN":
             try:
-                hospital_info["hospital_ids"] = list(
-                    user.medecin.hopitaux.values_list("id", flat=True)
-                )
+                hopitaux = user.medecin.hopitaux.all()
+                hospital_info["hospital_ids"] = [h.id for h in hopitaux]
+                hospital_info["hospital_names"] = [h.nom for h in hopitaux]
             except Exception:
                 hospital_info["hospital_ids"] = []
+                hospital_info["hospital_names"] = []
 
         return {
             "access_token": access_token,
             "refresh_token": refresh_token,
             "user": user_data,
-            **hospital_info  # fusionne les clés hospital_id / hospital_ids
+            **hospital_info
         }
     
     

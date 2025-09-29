@@ -137,30 +137,31 @@ class AuthViewSet(viewsets.ViewSet):
                 refresh_token = result["refresh_token"]
                 user_data = result["user"]
 
-                # On prépare la réponse de base
                 response_data = {
                     "access_token": access_token,
                     "user": user_data
                 }
 
-                # Si on a des infos hospitalières, on les ajoute
+                # Ajout des infos hospitalières si présentes
                 if result.get("hospital_id") is not None:
-                    response_data["hopital_id"] = result["hospital_id"]
-
+                    response_data["hospital_id"] = result["hospital_id"]
+                if result.get("hospital_name") is not None:
+                    response_data["hospital_name"] = result["hospital_name"]
                 if result.get("hospital_ids"):
-                    response_data["hopital_ids"] = result["hospital_ids"]
+                    response_data["hospital_ids"] = result["hospital_ids"]
+                if result.get("hospital_names"):
+                    response_data["hospital_names"] = result["hospital_names"]
 
                 response = Response(response_data, status=status.HTTP_200_OK)
-
 
                 # Ajout du refresh token en HttpOnly cookie
                 response.set_cookie(
                     key="refreshToken",
                     value=refresh_token,
                     httponly=True,
-                    secure=False,  # ⚠️ mettre True en prod avec HTTPS
+                    secure=True,  # ⚠️ mettre True en prod avec HTTPS
                     samesite="Strict",
-                    path="/api/auth/refresh_http"  # cookie envoyé uniquement sur ce path
+                    path="/api/auth/refresh_http"
                 )
 
                 return response
