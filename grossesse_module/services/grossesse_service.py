@@ -26,6 +26,9 @@ class DossierService:
 
     @staticmethod
     def create_dossier(user, grossesse, data):
+        # Vérifier si un dossier existe déjà pour cette grossesse
+        if hasattr(grossesse, "dossier") and grossesse.dossier is not None:
+            raise ValueError(f"La grossesse de la patiente {grossesse.patiente} a déjà un dossier obstétrique.")
         dossier = DossierRepository.create(grossesse, data)
         AuditAction.objects.create(user=user, patiente=grossesse.patiente, action_type="CREATE_DOSSIER_OBS")
         return dossier
