@@ -88,7 +88,7 @@ class HopitalViewSet(viewsets.ViewSet):
         )
         return response
 
-    @action(detail=True, methods=['post'], url_path='add-gestionnaire'
+    @action(detail=True, methods=['post'], url_path='add-gestionnaire',permission_classes=[IsSuperAdmin|IsGestionnaireAdminLocal]
             )
     def add_gestionnaire(self, request, pk=None):
         """POST /api/hospitals/{id}/add-gestionnaire/ - Ajouter un gestionnaire à un hôpital"""
@@ -99,3 +99,16 @@ class HopitalViewSet(viewsets.ViewSet):
         serializer.is_valid(raise_exception=True)
 
         return HopitalService.add_gestionnaire(hopital, serializer.validated_data, request.user)
+
+    @action(detail=True, methods=['get'], url_path='gestionnaires', permission_classes=[IsSuperAdmin|IsGestionnaireAdminLocal])
+    def list_gestionnaires(self, request, pk=None):
+        """
+        GET /api/hospitals/{id}/gestionnaires/ - Liste tous les gestionnaires d'un hôpital
+        Accessible par le superadmin ou un gestionnaire admin local
+        """
+        hopital = HopitalService.get_hopital(pk)
+        if isinstance(hopital, Response):
+            return hopital
+        gestionnaires = hopital.gestionnaires.all()
+        serializer = GestionnaireSerializer(gestionnaires, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
