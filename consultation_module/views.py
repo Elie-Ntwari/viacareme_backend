@@ -40,15 +40,17 @@ class PatienteFullInfoBySearchView(APIView):
             # Ajout des infos carte (remontée à Register via id carte attribuée)
             carte_info = None
             try:
-                from cards_module.models import CarteAttribuee, Register
-                carte = CarteAttribuee.objects.filter(patiente=pat).first()
-                if carte:
-                    register = Register.objects.filter(id=carte.carte_id).first() if hasattr(carte, "carte_id") else None
+                from cards_module.models import CarteAttribuee, RegistreCarte
+                carte_attribuee = CarteAttribuee.objects.filter(patiente=pat).first()
+                if carte_attribuee:
+                    registre = carte_attribuee.carte  # lien direct OneToOne vers RegistreCarte
                     carte_info = {
-                        "uid_rfid": getattr(register, "uid_rfid", None) if register else getattr(carte, "uid_rfid", None),
-                        "date_attribution": getattr(carte, "date_attribution", None),
-                        "statut": getattr(carte, "statut", None)
+                        "uid_rfid": getattr(registre, "uid_rfid", None),
+                        "statut": getattr(registre, "statut", None),
+                        "date_attribution": getattr(carte_attribuee, "date_attribution", None)
                     }
+                else:
+                    carte_info = None
             except Exception:
                 carte_info = None
             grossesses = Grossesse.objects.filter(patiente=pat)
