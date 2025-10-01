@@ -57,6 +57,8 @@ class AuditAction(models.Model):
         ("UPDATE_GROSSESSE", "Modification grossesse"),
         ("CREATE_DOSSIER_OBS", "Création dossier obstétrical"),
         ("UPDATE_DOSSIER_OBS", "Modification dossier obstétrical"),
+        ("ACCESS_DOSSIER", "Accès dossier obstétrical"),
+        
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     patiente = models.ForeignKey(Patiente, on_delete=models.CASCADE)

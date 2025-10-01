@@ -54,7 +54,8 @@ INSTALLED_APPS = [
     'cards_module',
     'medical_module',
     'patiente__module',
-    'grossesse_module'
+    'grossesse_module',
+    'consultation_module'
 ]
 
 # Middleware
