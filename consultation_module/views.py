@@ -37,6 +37,19 @@ class PatienteFullInfoBySearchView(APIView):
         result = []
         for pat in patientes:
             pat_data = PatienteBaseSerializer(pat).data
+            # Ajout des infos carte (uid RFID)
+            carte_info = None
+            try:
+                from cards_module.models import CarteAttribuee
+                carte = CarteAttribuee.objects.filter(patiente=pat).first()
+                if carte:
+                    carte_info = {
+                        "uid_rfid": getattr(carte, "uid_rfid", None),
+                        "date_attribution": getattr(carte, "date_attribution", None),
+                        "statut": getattr(carte, "statut", None)
+                    }
+            except Exception:
+                carte_info = None
             grossesses = Grossesse.objects.filter(patiente=pat)
             grossesses_data = []
             for g in grossesses:
@@ -52,6 +65,7 @@ class PatienteFullInfoBySearchView(APIView):
                 grossesses_data.append(g_data)
             result.append({
                 "patiente": pat_data,
+                "carte": carte_info,
                 "grossesses": grossesses_data
             })
         return Response(result, status=status.HTTP_200_OK)
