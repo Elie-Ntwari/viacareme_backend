@@ -206,8 +206,9 @@ class UserService:
         if not user or not check_password(password, user.password):
             raise ValidationError("Identifiants invalides.")
         if not user.est_actif:
-            raise ValidationError("Compte inactif, activez-le via email.")
-
+            raise ValidationError       
+        
+        # // ffff  
         # # 2FA obligatoire : si pas configuré, on renvoie provisioning_uri et qr_url mais PAS le secret
         # if not user.deux_facteurs_active:
         #     qr_data = TOTPService.start_totp_setup(user.email)
