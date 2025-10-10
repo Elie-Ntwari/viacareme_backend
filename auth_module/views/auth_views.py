@@ -45,7 +45,11 @@ class AuthViewSet(viewsets.ViewSet):
         updated = False
         for field in modifiable_fields:
             if field in request.data:
-                setattr(user, field, request.data[field])
+                value = request.data[field]
+                if field == "telephone" and value:
+                    from auth_module.services.user_service import normalize_phone
+                    value = normalize_phone(value)
+                setattr(user, field, value)
                 updated = True
         if updated:
             user.save()

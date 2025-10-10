@@ -39,32 +39,19 @@ def _validate_image_file(file_obj):
 
 def normalize_phone(phone: str) -> str:
     """
-    Transforme le numéro au format +2439... (pour la RDC)
-    Exemples acceptés :
-    - +243 97777...
-    - +24397777...
-    - 097777...
-    - 97777...
-    Retourne toujours +2439...
+    Transforme le numéro au format +243... pour la RDC.
+    - Si commence par +243, ne rien faire.
+    - Si commence par 0, enlever le 0 et mettre +243.
+    - Sinon, ajouter +243 au début.
     """
-    import re
     if not phone:
         return None
-    phone = re.sub(r"\D", "", phone)  # retire tout sauf chiffres
-    if phone.startswith("243"):
-        phone = "+" + phone
+    if phone.startswith("+243"):
+        return phone
     elif phone.startswith("0"):
-        phone = "+243" + phone[1:]
-    elif phone.startswith("9") and len(phone) == 8:
-        phone = "+243" + phone
-    elif phone.startswith("9") and len(phone) == 9:
-        phone = "+243" + phone
-    elif phone.startswith("+243"):
-        phone = "+243" + phone[4:]
+        return "+243" + phone[1:]
     else:
-        # format inconnu, retourne tel quel
-        phone = "+243" + phone[-9:] if len(phone) >= 9 else phone
-    return phone
+        return "+243" + phone
 
 class UserService:
 
@@ -374,10 +361,13 @@ class UserService:
 
     @staticmethod
     def initiate_login_by_phone(telephone, password):
-        try:
-            user = User.objects.get(telephone=telephone)
-        except User.DoesNotExist:
+        telephone = normalize_phone(telephone)
+        users = User.objects.filter(telephone=telephone)
+        if users.count() == 0:
             raise ValidationError("Identifiants invalides.")
+        elif users.count() > 1:
+            raise ValidationError("Erreur: plusieurs utilisateurs avec ce numéro de téléphone.")
+        user = users.first()
 
         if not check_password(password, user.password):
             raise ValidationError("Identifiants invalides.")
