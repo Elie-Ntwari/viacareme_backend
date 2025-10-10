@@ -26,5 +26,6 @@ urlpatterns = [
     path('api/',include('patiente__module.urls')),  # Patiente module URLs
     path('api/',include('grossesse_module.urls')),  # Grossesse module URLs
     path("api/", include("consultation_module.urls")),
+    path("api/", include("sms_sender.urls"))
     
 ]

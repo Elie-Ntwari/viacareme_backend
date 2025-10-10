@@ -16,7 +16,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Initialize environ
 env = environ.Env(
-    DEBUG=(bool, False)
+    DEBUG=(bool, True)
 )
 
 # Read .env
@@ -55,7 +55,8 @@ INSTALLED_APPS = [
     'medical_module',
     'patiente__module',
     'grossesse_module',
-    'consultation_module'
+    'consultation_module',
+    'sms_sender'
 ]
 
 # Middleware
@@ -106,6 +107,15 @@ DATABASES = {
         },
     }
 }
+
+
+
+# MD SMS SENDER
+MD_SMS_API_KEY = env("MD_SMS_API_KEY", default=None)
+MD_SMS_CLIENT_ID = env("MD_SMS_CLIENT_ID", default=None)
+MD_SMS_BASE_URL = env("MD_SMS_BASE_URL", default="http://164.68.101.225:6005/api/v2/SendSMS")
+MD_SMS_TIMEOUT = env.int("MD_SMS_TIMEOUT", default=10)
+
 
 
 # config pour aiven
