@@ -15,6 +15,7 @@ from .services import create_otp_by_rfid, verify_otp
 from grossesse_module.models import Grossesse
 from auth_module.models.user import User
 from hospital_module.models import Hopital
+from sms_sender.services import send_sms_via_md
 
 
 
@@ -260,11 +261,13 @@ class CreateOtpByRfidView(APIView):
         uid_rfid = s.validated_data.get("uid_rfid")
         patiente_id = s.validated_data.get("patiente_id")
         action = s.validated_data["action"]
-      
+
         try:
             if uid_rfid:
-                otp = create_otp_by_rfid(uid_rfid=uid_rfid, action=action)
-                code = otp.code_otp
+                result = create_otp_by_rfid(uid_rfid=uid_rfid, action=action)
+                if not result.get("success"):
+                    return Response({"detail": result.get("error")}, status=400)
+                return Response(result, status=201)
             else:
                 from django.utils import timezone
                 from datetime import timedelta
@@ -275,12 +278,51 @@ class CreateOtpByRfidView(APIView):
                     return Response({"detail":"Patiente introuvable"}, status=404)
                 code = ActionOTP.generate_code()
                 expire_at = timezone.now() + timedelta(minutes=10)
-                otp = ActionOTP.objects.create(patiente=pat, action=action, code_otp=code, expire_at=expire_at, created_par=created_par)
+                otp = ActionOTP.objects.create(patiente=pat, action=action, code_otp=code, expire_at=expire_at)
                 phone = getattr(pat.user, "telephone", None)
-                if phone:
-                    print(f"ENVOI SMS {phone}: code {code}")
-            # On retourne aussi le code dans la réponse
-            return Response({"otp_id": str(otp.token), "expire_at": otp.expire_at, "code": code}, status=201)
+                if not phone:
+                    return Response({"detail": "Aucun numéro de téléphone pour cette patiente"}, status=400)
+                # Normalize phone to start with 2438 and be 12 characters
+                phone = phone.lstrip('+').lstrip('0')
+                if not phone.startswith('243'):
+                    phone = '2438' + phone
+                if len(phone) > 12:
+                    phone = phone[:12]
+                elif len(phone) < 12:
+                    phone = phone.ljust(12, '0')
+                message = f"ViàCareme: Code OTP pour {action}: {code} 🔐. Valide 10 min ⏱️."
+                sms_result = send_sms_via_md(message, phone)
+                if not sms_result.get("success"):
+                    error_type = sms_result.get("error_type")
+                    if error_type == "api_error":
+                        error_msg = f"Erreur API SMS: {sms_result.get('api_error_code')} - {sms_result.get('api_error_description')}"
+                    elif error_type == "timeout":
+                        error_msg = "Timeout lors de l'envoi du SMS"
+                    elif error_type == "connection":
+                        error_msg = "Erreur de connexion lors de l'envoi du SMS"
+                    elif error_type == "config":
+                        error_msg = "Configuration manquante pour l'envoi du SMS"
+                    else:
+                        error_msg = f"Erreur inconnue lors de l'envoi du SMS: {sms_result.get('error')}"
+                    return Response({"detail": error_msg}, status=400)
+                # Return similar format
+                patiente_info = {
+                    "id": pat.id,
+                    "nom": pat.user.nom,
+                    "prenom": pat.user.prenom,
+                    "telephone": pat.user.telephone,
+                    "email": pat.user.email,
+                }
+                return Response({
+                    "success": True,
+                    "message": "OTP envoyé sur le SMS",
+                    "otp_token": str(otp.token),
+                    "otp_expire_at": otp.expire_at,
+                    "patiente": patiente_info,
+                    "grossesse_en_cours": None,  # Could add if needed
+                    "dossier_obstetrical": None,
+                    "derniere_consultation": None,
+                }, status=201)
         except Exception as e:
             return Response({"detail": str(e)}, status=400)
 
