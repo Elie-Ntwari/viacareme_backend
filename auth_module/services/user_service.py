@@ -102,6 +102,9 @@ class UserService:
         # Normalisation du téléphone
         telephone_norm = normalize_phone(telephone) if telephone else None
 
+        if telephone_norm and User.objects.filter(telephone=telephone_norm).exists():
+            raise ValidationError("Un utilisateur avec ce numéro de téléphone existe déjà.")
+
         user = UserRepository.create_user(
             nom=nom,
             postnom=postnom,
@@ -154,6 +157,9 @@ class UserService:
 
         # Normalisation du téléphone
         telephone_norm = normalize_phone(telephone) if telephone else None
+
+        if telephone_norm and User.objects.filter(telephone=telephone_norm).exists():
+            raise ValidationError("Un utilisateur avec ce numéro de téléphone existe déjà.")
 
         user = UserRepository.create_user(
             nom=nom,
