@@ -21,6 +21,16 @@ class GrossesseService:
         AuditAction.objects.create(user=user, patiente=grossesse.patiente, action_type="UPDATE_GROSSESSE")
         return updated
 
+    @staticmethod
+    def set_grossesse_state(user, grossesse, new_statut):
+        from grossesse_module.models import Grossesse
+        if new_statut not in dict(Grossesse.STATUTS):
+            raise ValueError("Statut invalide")
+        grossesse.statut = new_statut
+        grossesse.save()
+        AuditAction.objects.create(user=user, patiente=grossesse.patiente, action_type="UPDATE_GROSSESSE")
+        return grossesse
+
 
 class DossierService:
 

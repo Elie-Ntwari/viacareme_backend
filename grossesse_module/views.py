@@ -70,6 +70,17 @@ class GrossesseUpdate(APIView):
         except ValueError as e:
             return Response({"error": str(e)}, status=400)
 
+class GrosseSetState(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request, id):
+        try:
+            grossesse = get_object_or_404(Grossesse, id=id)
+            new_statut = request.data.get("statut")
+            updated = GrossesseService.set_grossesse_state(request.user, grossesse, new_statut)
+            return Response(GrossesseSerializer(updated).data)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=400)
+
 
 class DossierCreateUpdate(APIView):
     permission_classes = [IsAuthenticated]
