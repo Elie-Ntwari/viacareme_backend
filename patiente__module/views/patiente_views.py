@@ -159,3 +159,55 @@ class PatienteList(APIView):
         pats = PatienteService.get_all_patientes()
         serializer = PatienteBaseSerializer(pats, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AssignMedecinToPatienteView(APIView):
+    permission_classes = [IsAuthenticated, IsAuthenticatedAndManagerOrSuperAdmin]
+
+    def post(self, request, hopital_id: int, patiente_id: int):
+        medecin_id = request.data.get("medecin_id")
+        if not medecin_id:
+            return Response({"detail": "medecin_id requis."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            updated_patiente = PatienteService.assign_medecin_to_patiente(
+                request.user, patiente_id, medecin_id, hopital_id
+            )
+            return Response(PatienteBaseSerializer(updated_patiente).data, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except PermissionDenied as e:
+            return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
+
+
+class UnassignMedecinFromPatienteView(APIView):
+    permission_classes = [IsAuthenticated, IsAuthenticatedAndManagerOrSuperAdmin]
+
+    def post(self, request, hopital_id: int, patiente_id: int):
+        medecin_id = request.data.get("medecin_id")
+        if not medecin_id:
+            return Response({"detail": "medecin_id requis."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            updated_patiente = PatienteService.unassign_medecin_from_patiente(
+                request.user, patiente_id, medecin_id, hopital_id
+            )
+            return Response(PatienteBaseSerializer(updated_patiente).data, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except PermissionDenied as e:
+            return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
+
+
+class ListMedecinsForPatienteView(APIView):
+    permission_classes = [IsAuthenticated, IsAuthenticatedAndManagerOrSuperAdmin]
+
+    def get(self, request, hopital_id: int, patiente_id: int):
+        try:
+            medecins = PatienteService.get_medecins_for_patiente(request.user, patiente_id, hopital_id)
+            from patiente__module.serializers.patiente_serializers import MedecinSerializer
+            return Response(MedecinSerializer(medecins, many=True).data, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except PermissionDenied as e:
+            return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)

@@ -13,7 +13,8 @@ class Patiente(models.Model):
     date_inscription = models.DateTimeField(default=timezone.now)
     has_carte = models.BooleanField(default=False)
     creer_a_hopital = models.ForeignKey("hospital_module.Hopital", on_delete=models.SET_NULL, null=True, blank=True, related_name="patientes_creees")
-  
+    medecins = models.ManyToManyField("medical_module.Medecin", blank=True, related_name="patientes_assignees")
+
     class Meta:
         db_table = "patiente"
 

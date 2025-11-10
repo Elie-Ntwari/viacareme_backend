@@ -1,14 +1,26 @@
-import re
-from rest_framework import serializers
 
+from rest_framework import serializers
+from medical_module.models.medecin import Medecin
 from hospital_module.models import Hopital
 from patiente__module.models.patiente import Patiente
+
 
 
 class CreerAHopital(serializers.ModelSerializer):
     class Meta:
         model = Hopital
         fields = ["id", "nom","email" ]
+
+class MedecinSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(source="user.email", read_only=True)
+    nom = serializers.CharField(source="user.nom", read_only=True)
+    postnom = serializers.CharField(source="user.postnom", read_only=True)
+    prenom = serializers.CharField(source="user.prenom", read_only=True)
+    telephone = serializers.CharField(source="user.telephone", read_only=True)
+
+    class Meta:
+        model = Medecin
+        fields = ["id", "email", "nom", "postnom", "prenom", "telephone", "specialite"]
 
 class PatienteBaseSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source="user.email", read_only=True)
@@ -17,12 +29,13 @@ class PatienteBaseSerializer(serializers.ModelSerializer):
     prenom = serializers.CharField(source="user.prenom", read_only=True)
     telephone = serializers.CharField(source="user.telephone", read_only=True)
     creer_a_hopital = CreerAHopital(read_only=True)
-    
+    medecins = MedecinSerializer(many=True, read_only=True)
+
     class Meta:
         model = Patiente
         fields = [
             "id", "email", "nom", "postnom", "prenom", "telephone",
-            "date_naissance", "adresse", "ville", "province","has_carte","creer_a_hopital"
+            "date_naissance", "adresse", "ville", "province","has_carte","creer_a_hopital", "medecins"
         ]
 
 

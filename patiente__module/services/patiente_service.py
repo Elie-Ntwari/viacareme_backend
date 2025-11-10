@@ -77,3 +77,53 @@ class PatienteService:
     @staticmethod
     def get_all_patientes():
         return PatienteRepository.get_all_patientes()
+
+    @staticmethod
+    def assign_medecin_to_patiente(request_user: User, patiente_id: int, medecin_id: int, hopital_id: int):
+        PatienteService._assert_user_can_manage_hopital(request_user, hopital_id)
+
+        # Vérifier que la patiente existe et appartient à l'hôpital
+        patiente = Patiente.objects.filter(id=patiente_id, creer_a_hopital_id=hopital_id).first()
+        if not patiente:
+            raise ValidationError("Patiente introuvable ou n'appartient pas à cet hôpital.")
+
+        # Vérifier que le médecin existe et est affecté à l'hôpital
+        from medical_module.models.medecin import MedecinHopital
+        medecin_hopital = MedecinHopital.objects.filter(medecin_id=medecin_id, hopital_id=hopital_id).first()
+        if not medecin_hopital:
+            raise ValidationError("Médecin introuvable ou non affecté à cet hôpital.")
+
+        updated_patiente = PatienteRepository.assign_medecin_to_patiente(patiente_id, medecin_id)
+        if not updated_patiente:
+            raise ValidationError("Erreur lors de l'affectation du médecin.")
+        return updated_patiente
+
+    @staticmethod
+    def unassign_medecin_from_patiente(request_user: User, patiente_id: int, medecin_id: int, hopital_id: int):
+        PatienteService._assert_user_can_manage_hopital(request_user, hopital_id)
+
+        # Vérifier que la patiente existe et appartient à l'hôpital
+        patiente = Patiente.objects.filter(id=patiente_id, creer_a_hopital_id=hopital_id).first()
+        if not patiente:
+            raise ValidationError("Patiente introuvable ou n'appartient pas à cet hôpital.")
+
+        # Vérifier que le médecin est assigné à cette patiente
+        if not patiente.medecins.filter(id=medecin_id).exists():
+            raise ValidationError("Ce médecin n'est pas assigné à cette patiente.")
+
+        updated_patiente = PatienteRepository.unassign_medecin_from_patiente(patiente_id, medecin_id)
+        if not updated_patiente:
+            raise ValidationError("Erreur lors de la désaffectation du médecin.")
+        return updated_patiente
+
+    @staticmethod
+    def get_medecins_for_patiente(request_user: User, patiente_id: int, hopital_id: int):
+        PatienteService._assert_user_can_manage_hopital(request_user, hopital_id)
+
+        # Vérifier que la patiente existe et appartient à l'hôpital
+        patiente = Patiente.objects.filter(id=patiente_id, creer_a_hopital_id=hopital_id).first()
+        if not patiente:
+            raise ValidationError("Patiente introuvable ou n'appartient pas à cet hôpital.")
+
+        medecins = PatienteRepository.get_medecins_for_patiente(patiente_id)
+        return medecins

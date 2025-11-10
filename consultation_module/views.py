@@ -8,6 +8,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.pagination import PageNumberPagination
 from django.utils import timezone
 from .models import Consultation, RendezVous, Vaccination, ActionOTP
 from .serializers import ConsultationSerializer, RendezVousSerializer, VaccinationSerializer, ActionOtpCreateSerializer, ActionOtpVerifySerializer
@@ -15,6 +16,7 @@ from .services import create_otp_by_rfid, verify_otp
 from grossesse_module.models import Grossesse
 from auth_module.models.user import User
 from hospital_module.models import Hopital
+from medical_module.models.medecin import Medecin
 from sms_sender.services import send_sms_via_md
 
 
@@ -347,6 +349,74 @@ class VerifyOtpView(APIView):
             return Response({"valid": True})
         except Exception as e:
             return Response({"valid": False, "detail": str(e)}, status=400)
+
+
+class MedecinPatientesFullInfoView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, medecin_id):
+        # Vérifier que le médecin existe
+        try:
+            medecin = Medecin.objects.get(id=medecin_id)
+        except Medecin.DoesNotExist:
+            return Response({"detail": "Médecin introuvable."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Récupérer toutes les patientes assignées à ce médecin
+        patientes = medecin.patientes_assignees.all().select_related('user', 'creer_a_hopital')
+
+        # Pagination
+        paginator = PageNumberPagination()
+        paginator.page_size = request.query_params.get('page_size', 10)
+        paginated_patientes = paginator.paginate_queryset(patientes, request)
+
+        result = []
+        for pat in paginated_patientes:
+            pat_data = PatienteBaseSerializer(pat).data
+
+            # Ajout des infos carte
+            carte_info = None
+            try:
+                from cards_module.models import CarteAttribuee, RegistreCarte
+                carte_attribuee = CarteAttribuee.objects.filter(patiente=pat).first()
+                if carte_attribuee:
+                    registre = carte_attribuee.carte
+                    carte_info = {
+                        "uid_rfid": getattr(registre, "uid_rfid", None),
+                        "statut": getattr(registre, "statut", None),
+                        "date_attribution": getattr(carte_attribuee, "date_attribution", None)
+                    }
+            except Exception:
+                carte_info = None
+
+            # Grossesses avec consultations, RDV et vaccinations
+            grossesses = Grossesse.objects.filter(patiente=pat)
+            grossesses_data = []
+            for g in grossesses:
+                g_data = GrossesseSerializer(g).data
+                dossier = getattr(g, "dossier", None)
+                g_data["dossier_obstetrical"] = DossierObstetricalSerializer(dossier).data if dossier else None
+
+                # Consultations pour cette grossesse
+                consultations = Consultation.objects.filter(grossesse=g)
+                g_data["consultations"] = ConsultationSerializer(consultations, many=True).data
+
+                # Rendez-vous pour cette grossesse
+                rdvs = RendezVous.objects.filter(grossesse=g)
+                g_data["rendezvous"] = RendezVousSerializer(rdvs, many=True).data
+
+                # Vaccinations pour cette grossesse
+                vaccins = Vaccination.objects.filter(grossesse=g)
+                g_data["vaccinations"] = VaccinationSerializer(vaccins, many=True).data
+
+                grossesses_data.append(g_data)
+
+            result.append({
+                "patiente": pat_data,
+                "carte": carte_info,
+                "grossesses": grossesses_data
+            })
+
+        return paginator.get_paginated_response(result)
 
 
 

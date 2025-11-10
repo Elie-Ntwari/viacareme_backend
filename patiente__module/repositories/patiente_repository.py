@@ -7,7 +7,7 @@ from auth_module.models.user import User
 from patiente__module.models.patiente import Patiente
 from hospital_module.models import Hopital
 from django.contrib.auth.hashers import make_password
-
+from medical_module.models.medecin import Medecin
 
 class PatienteRepository:
     @staticmethod
@@ -56,3 +56,32 @@ class PatienteRepository:
     @staticmethod
     def get_all_patientes():
         return Patiente.objects.all().select_related("user").order_by("-date_inscription")
+
+    @staticmethod
+    def assign_medecin_to_patiente(patiente_id: int, medecin_id: int):
+        from medical_module.models.medecin import Medecin
+        try:
+            patiente = Patiente.objects.get(id=patiente_id)
+            medecin = Medecin.objects.get(id=medecin_id)
+            patiente.medecins.add(medecin)
+            return patiente
+        except (Patiente.DoesNotExist, Medecin.DoesNotExist):
+            return None
+
+    @staticmethod
+    def unassign_medecin_from_patiente(patiente_id: int, medecin_id: int):
+        try:
+            patiente = Patiente.objects.get(id=patiente_id)
+            medecin = patiente.medecins.get(id=medecin_id)
+            patiente.medecins.remove(medecin)
+            return patiente
+        except (Patiente.DoesNotExist, Medecin.DoesNotExist):
+            return None
+
+    @staticmethod
+    def get_medecins_for_patiente(patiente_id: int):
+        try:
+            patiente = Patiente.objects.get(id=patiente_id)
+            return patiente.medecins.all().select_related("user")
+        except Patiente.DoesNotExist:
+            return None
