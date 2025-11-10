@@ -354,12 +354,15 @@ class VerifyOtpView(APIView):
 class MedecinPatientesFullInfoView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, medecin_id):
-        # Vérifier que le médecin existe
+    def get(self, request, user_id):
+        # Récupérer l'utilisateur et vérifier qu'il a un profil médecin
         try:
-            medecin = Medecin.objects.get(id=medecin_id)
-        except Medecin.DoesNotExist:
-            return Response({"detail": "Médecin introuvable."}, status=status.HTTP_404_NOT_FOUND)
+            user = User.objects.get(id=user_id)
+            medecin = getattr(user, 'profil_medecin', None)
+            if not medecin:
+                return Response({"detail": "Cet utilisateur n'a pas de profil médecin."}, status=status.HTTP_404_NOT_FOUND)
+        except User.DoesNotExist:
+            return Response({"detail": "Utilisateur introuvable."}, status=status.HTTP_404_NOT_FOUND)
 
         # Récupérer toutes les patientes assignées à ce médecin
         patientes = medecin.patientes_assignees.all().select_related('user', 'creer_a_hopital')
