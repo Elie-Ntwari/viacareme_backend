@@ -364,7 +364,7 @@ class MedecinPatientesFullInfoView(APIView):
         except User.DoesNotExist:
             return Response({"detail": "Utilisateur introuvable."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Récupérer toutes les patientes assignées à ce médecin
+        # Récupérer toutes les patientes assignées à ce médecin via la relation ManyToMany
         patientes = medecin.patientes_assignees.all().select_related('user', 'creer_a_hopital')
 
         # Pagination
