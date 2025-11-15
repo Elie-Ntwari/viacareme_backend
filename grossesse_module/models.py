@@ -16,7 +16,7 @@ class Grossesse(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
-        unique_together = ("patiente", "statut")  # 1 grossesse EN_COURS par patiente
+        pass  # Constraint handled in service logic
 
     def __str__(self):
         return f"Grossesse {self.id} - {self.patiente.user.nom}"

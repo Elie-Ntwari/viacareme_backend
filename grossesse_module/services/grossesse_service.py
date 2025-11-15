@@ -26,6 +26,20 @@ class GrossesseService:
         from grossesse_module.models import Grossesse
         if new_statut not in dict(Grossesse.STATUTS):
             raise ValueError("Statut invalide")
+
+        # Check if the grossesse already has this statut
+        if grossesse.statut == new_statut:
+            if new_statut == "TERMINEE":
+                raise ValueError("La grossesse a déjà le statut terminée")
+            else:
+                raise ValueError(f"La grossesse a déjà le statut {new_statut}")
+
+        # Prevent multiple EN_COURS for the same patiente
+        if new_statut == "EN_COURS":
+            existing_en_cours = Grossesse.objects.filter(patiente=grossesse.patiente, statut="EN_COURS").exclude(id=grossesse.id)
+            if existing_en_cours.exists():
+                raise ValueError("Une grossesse en cours existe déjà pour cette patiente")
+
         grossesse.statut = new_statut
         grossesse.save()
         AuditAction.objects.create(user=user, patiente=grossesse.patiente, action_type="UPDATE_GROSSESSE")
