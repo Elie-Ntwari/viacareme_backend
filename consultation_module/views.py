@@ -354,7 +354,7 @@ class VerifyOtpView(APIView):
 class MedecinPatientesFullInfoView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, user_id):
+    def get(self, request, user_id, hopital_id):
         # Récupérer l'utilisateur et vérifier qu'il a un profil médecin
         try:
             user = User.objects.get(id=user_id)
@@ -364,8 +364,20 @@ class MedecinPatientesFullInfoView(APIView):
         except User.DoesNotExist:
             return Response({"detail": "Utilisateur introuvable."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Récupérer toutes les patientes assignées à ce médecin via la relation ManyToMany
-        patientes = medecin.patientes_assignees.all().select_related('user', 'creer_a_hopital')
+        # Vérifier que l'hôpital existe
+        try:
+            hopital = Hopital.objects.get(id=hopital_id)
+        except Hopital.DoesNotExist:
+            return Response({"detail": "Hôpital introuvable."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Vérifier que le médecin travaille pour cet hôpital
+        if not medecin.hopitaux.filter(id=hopital_id).exists():
+            return Response({"detail": "Ce médecin ne travaille pas pour cet hôpital."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Récupérer les patientes assignées à ce médecin ET qui appartiennent à cet hôpital
+        patientes = medecin.patientes_assignees.filter(
+            creer_a_hopital_id=hopital_id
+        ).select_related('user', 'creer_a_hopital')
 
         # Pagination
         paginator = PageNumberPagination()

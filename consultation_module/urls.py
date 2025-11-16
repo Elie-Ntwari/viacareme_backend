@@ -29,5 +29,5 @@ urlpatterns = [
     path("rendezvous/update/", UpdateRendezVousView.as_view(), name="rendezvous-update"),
     path("vaccination/update/", UpdateVaccinationView.as_view(), name="vaccination-update"),
     path("patientes/search-full-info/", PatienteFullInfoBySearchView.as_view(), name="patiente-search-full-info"),
-    path("users/<int:user_id>/medecin-patientes-full-info/", MedecinPatientesFullInfoView.as_view(), name="medecin-patientes-full-info"),
+    path("users/<int:user_id>/medecin-patientes-full-info/<int:hopital_id>/", MedecinPatientesFullInfoView.as_view(), name="medecin-patientes-full-info"),
 ]
