@@ -40,6 +40,45 @@ class DossierObstetrical(models.Model):
         return f"Dossier obstétrical Grossesse {self.grossesse.id}"
 
 
+class ClotureGrossesse(models.Model):
+    GENRES_ENFANT = (
+        ("MASCULIN", "Masculin"),
+        ("FEMININ", "Féminin"),
+        ("INDETERMINE", "Indéterminé"),
+    )
+    
+    TYPES_ACCOUCHEMENT = (
+        ("VAGINAL", "Accouchement vaginal"),
+        ("CESARIENNE", "Césarienne"),
+        ("FORCEPS", "Forceps"),
+        ("VENTOUSE", "Ventouse"),
+    )
+    
+    ISSUES_GROSSESSE = (
+        ("VIVANT", "Enfant vivant"),
+        ("MORT_NE", "Mort-né"),
+        ("FAUSSE_COUCHE", "Fausse couche"),
+        ("INTERRUPTION", "Interruption médicale"),
+    )
+    
+    grossesse = models.OneToOneField(Grossesse, on_delete=models.CASCADE, related_name="cloture")
+    date_accouchement = models.DateField()
+    nombre_enfants = models.IntegerField(default=1)
+    genre_enfant = models.CharField(max_length=20, choices=GENRES_ENFANT, null=True, blank=True)
+    poids_naissance = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True, help_text="Poids en kg")
+    taille_naissance = models.IntegerField(null=True, blank=True, help_text="Taille en cm")
+    type_accouchement = models.CharField(max_length=20, choices=TYPES_ACCOUCHEMENT)
+    issue_grossesse = models.CharField(max_length=20, choices=ISSUES_GROSSESSE)
+    complications = models.TextField(blank=True, null=True)
+    observations = models.TextField(blank=True, null=True)
+    duree_travail = models.DurationField(null=True, blank=True, help_text="Durée du travail")
+    created_at = models.DateTimeField(default=timezone.now)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    
+    def __str__(self):
+        return f"Clôture grossesse {self.grossesse.id} - {self.date_accouchement}"
+
+
 class DossierAccess(models.Model):
     patiente = models.ForeignKey(Patiente, on_delete=models.CASCADE, related_name="acces_dossier")
     code_otp = models.CharField(max_length=6)
@@ -55,6 +94,7 @@ class AuditAction(models.Model):
     ACTIONS = (
         ("CREATE_GROSSESSE", "Création grossesse"),
         ("UPDATE_GROSSESSE", "Modification grossesse"),
+        ("CLOTURE_GROSSESSE", "Clôture grossesse"),
         ("CREATE_DOSSIER_OBS", "Création dossier obstétrical"),
         ("UPDATE_DOSSIER_OBS", "Modification dossier obstétrical"),
         ("ACCESS_DOSSIER", "Accès dossier obstétrical"),

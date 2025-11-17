@@ -1,5 +1,5 @@
 
-from grossesse_module.models import AuditAction
+from grossesse_module.models import AuditAction, ClotureGrossesse
 from grossesse_module.repositories import DossierRepository, GrossesseRepository
 
 
@@ -22,7 +22,7 @@ class GrossesseService:
         return updated
 
     @staticmethod
-    def set_grossesse_state(user, grossesse, new_statut):
+    def set_grossesse_state(user, grossesse, new_statut, cloture_data=None):
         from grossesse_module.models import Grossesse
         if new_statut not in dict(Grossesse.STATUTS):
             raise ValueError("Statut invalide")
@@ -40,9 +40,27 @@ class GrossesseService:
             if existing_en_cours.exists():
                 raise ValueError("Une grossesse en cours existe déjà pour cette patiente")
 
+        # Si le statut est TERMINEE, créer les informations de clôture
+        if new_statut == "TERMINEE":
+            if not cloture_data:
+                raise ValueError("Les informations de clôture sont obligatoires pour terminer une grossesse")
+            
+            # Vérifier si une clôture existe déjà
+            if hasattr(grossesse, 'cloture') and grossesse.cloture:
+                raise ValueError("Cette grossesse a déjà été clôturée")
+            
+            # Créer la clôture
+            cloture_data['grossesse'] = grossesse
+            cloture_data['created_by'] = user
+            ClotureGrossesse.objects.create(**cloture_data)
+
         grossesse.statut = new_statut
         grossesse.save()
-        AuditAction.objects.create(user=user, patiente=grossesse.patiente, action_type="UPDATE_GROSSESSE")
+        
+        # Enregistrer l'action d'audit appropriée
+        action_type = "CLOTURE_GROSSESSE" if new_statut == "TERMINEE" else "UPDATE_GROSSESSE"
+        AuditAction.objects.create(user=user, patiente=grossesse.patiente, action_type=action_type)
+        
         return grossesse
 
 

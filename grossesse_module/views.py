@@ -5,7 +5,7 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404
 from .models import Grossesse, DossierObstetrical
 from patiente__module.models.patiente import Patiente
-from .serializers import GrossesseSerializer, DossierObstetricalSerializer
+from .serializers import GrossesseSerializer, DossierObstetricalSerializer, GrossesseClotureSerializer, ClotureGrossesseSerializer
 from .services.otp_service import OTPService
 from .services.grossesse_service import GrossesseService, DossierService
 
@@ -72,14 +72,40 @@ class GrossesseUpdate(APIView):
 
 class GrosseSetState(APIView):
     permission_classes = [IsAuthenticated]
+    
     def post(self, request, id):
         try:
             grossesse = get_object_or_404(Grossesse, id=id)
-            new_statut = request.data.get("statut")
-            updated = GrossesseService.set_grossesse_state(request.user, grossesse, new_statut)
-            return Response(GrossesseSerializer(updated).data)
+            
+            # Utiliser le nouveau serializer pour valider les données
+            serializer = GrossesseClotureSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            
+            validated_data = serializer.validated_data
+            new_statut = validated_data.get("statut")
+            cloture_data = validated_data.get("cloture_info")
+            
+            # Appeler le service avec les données de clôture si nécessaire
+            updated = GrossesseService.set_grossesse_state(
+                request.user,
+                grossesse,
+                new_statut,
+                cloture_data
+            )
+            
+            # Préparer la réponse avec les informations de clôture si disponibles
+            response_data = GrossesseSerializer(updated).data
+            
+            # Si la grossesse a été terminée, inclure les informations de clôture
+            if new_statut == "TERMINEE" and hasattr(updated, 'cloture'):
+                response_data['cloture'] = ClotureGrossesseSerializer(updated.cloture).data
+            
+            return Response(response_data)
+            
         except ValueError as e:
             return Response({"error": str(e)}, status=400)
+        except Exception as e:
+            return Response({"error": "Une erreur inattendue s'est produite"}, status=500)
 
 
 class DossierCreateUpdate(APIView):
