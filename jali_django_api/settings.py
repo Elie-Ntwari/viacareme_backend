@@ -31,6 +31,8 @@ CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
 
 CORS_ALLOW_CREDENTIALS = True  # important pour envoyer cookies HttpOnly
 
+GEMINI_API_KEY = env("GEMINI_API_KEY")
+
 # Applications
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -56,7 +58,8 @@ INSTALLED_APPS = [
     'patiente__module',
     'grossesse_module',
     'consultation_module',
-    'sms_sender'
+    'sms_sender',
+    'modele_ai',
 ]
 
 # Middleware
