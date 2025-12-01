@@ -1,84 +1,193 @@
-#  ** Mise à Jour du Projet : Intégration de l'Intelligence Artificielle pour la Santé Maternelle **
 
-Ce document présente les modifications ajoutées au code existant et les étapes de configuration nécessaires suite à l'intégration d'un nouveau module d'intelligence artificielle (IA) et de fonctionnalités d'assistance dans l'application.
+# VIACAREME – Backend (Django REST Framework)
 
-Le travail consistait principalement à :
+Backend officiel de **VIACAREME**, une plateforme de gestion des dossiers médicaux des femmes enceintes permettant la centralisation, la sécurité et l’analyse intelligente des données médicales.
+Cette version inclut désormais un **module d’Intelligence Artificielle dédié à la santé maternelle**.
 
-Ajouter des fonctionnalités d'assistance (Chatbot de bien-être).
+---
 
-Intégrer un modèle de Machine Learning pour la prédiction et l'analyse du risque en santé maternelle.
+## 🚀 Fonctionnalités principales
 
-## 💡 ** 1. 🛠️ Étapes de Configuration et Initialisation du Module **
-Cette section détaille les actions nécessaires pour initialiser le nouveau module et préparer l'environnement.
+* Gestion des hôpitaux et des médecins
+* Enregistrement et suivi des patientes
+* Gestion des cartes à puce (RFID)
+* Consultations médicales et rendez-vous
+* Gestion des grossesses et clôture de dossiers
+* Accès temporaire via OTP sécurisé
+* Envoi de SMS
+* Authentification et rôles (SuperAdmin, Gestionnaire, Médecin, Patiente)
+* ** Module IA**
 
-Le nouveau module modele_ia introduit deux vues principales exposant des services via des endpoints API.A. 💬 Chatbot de Bien-être et Conseils (API Endpoint: api/chatbot/ et api/predict/)Cette vue implémente un chatbot conçu pour offrir des conseils de bien-être et de l'assistance aux femmes enceintes.Objectif : Encourager le bien-être général et fournir des informations non médicales.Contrainte Éthique et Sécurité : Le modèle est strictement configuré pour NE PAS fournir de recommandations sur des médicaments ou des traitements médicaux. Son rôle est d'inciter la patiente à consulter son médecin en cas de problème de santé.B. 🔬 Vue de Prédiction du Risque de Santé MaternelleCette vue expose un service d'analyse prédictive qui sert d'Outil d'Aide à la Décision Clinique pour les professionnels de la santé.Modèle Utilisé : Un modèle de Machine Learning entraîné pour évaluer le risque de la femme enceinte (Faible, Moyen, Élevé).Fonctionnalité pour le Clinicien :Le modèle analyse les données des visites passées pour fournir une vue d'ensemble de la tendance du risque.Pour chaque prédiction de visite, des explications claires sont fournies, identifiant le facteur clé (la donnée) qui a conduit à la décision de risque.Un graphique est généré pour visualiser l'évolution du risque au fil des rendez-vous.Données d'Entrée Utilisées pour le Modèle : Le modèle utilise les données statiques (de base) et celles relevées lors de chaque visite :VariableDescriptionUnitéÂgeÂge de la patiente.AnnéesTension Systolique (BP)Pression artérielle systolique.mmHgTension Diastolique (BP)Pression artérielle diastolique.mmHgGlycémie (BGS)Taux de sucre dans le sang.g/L ou mmol/LTempérature (°F)Température corporelle.Degrés Fahrenheit (°F)Fréquence CardiaqueBattements cardiaques par minute.Bpm3. 📂 Fichiers et Intégration du ModèleFichiers du Modèle et des Données :Le module modele_ia contient le modèle entraîné sous forme de fichier sérialisé : maternal_health.pkl.Le fichier des données utilisé pour l'entraînement est également inclus à des fins de référence : Maternal Health Risk Data Set.csv.Configuration des URLs :Le module modele_ia inclut son propre fichier urls.py définissant les routes (api/chatbot/ et la vue de prédiction).Ces chemins d'accès ont été ajoutés et inclus dans le fichier d'URLs principal (urls.py) du projet.
-Création et Enregistrement de l'Application Django :
+  * Chatbot de bien-être (conseils non médicaux)
+  * Prédiction du risque de santé maternelle (Faible / Moyen / Élevé)
+  * Analyse explicative des facteurs de risque
+  * Génération de graphique d'évolution du risque
 
-Un nouveau module Django nommé modele_ia a été créé via la commande django-admin startapp modele_ia.
+---
 
-Cette nouvelle application a été ajoutée à la liste INSTALLED_APPS dans le fichier settings.py.
+## 🛠️ Stack technique
 
-## ** Gestion de la Clé d'API : **
+* **Backend** : Django + DRF
+* **Base de données** : PostgreSQL
+* **Auth** : JWT
+* **IA/ML** : modèle scikit-learn sérialisé (`maternal_health.pkl`)
+* **Hébergement** : AWS
+* **API Base URL** : [https://api.viacareme.com/api/](https://api.viacareme.com/api/)
 
-Une nouvelle clé de configuration, GEMINI_API_KEY, a été ajoutée au fichier settings.py.
+---
 
-⚠️ Important : Pour une utilisation en production, cette clé doit être stockée dans un fichier de configuration sécurisé (.env) plutôt que directement dans settings.py.
+## 📂 Structure du projet
 
-## ** 2. 💡 Nouvelles Fonctionnalités Développées **
+```
+viacareme_backend/
+│── jali_django_api/         # Configuration Django
+│── auth_module/             # Authentification & utilisateurs
+│── hospital_module/         # Hôpitaux et zones de santé
+│── medical_module/          # Médecins
+│── patiente_module/         # Patientes
+│── consultation_module/     # Consultations
+│── grossesse_module/        # Grossesses
+│── cards_module/            # Cartes RFID
+│── sms_sender/              # Notifications SMS
+│── modele_ia/               # MODULE IA 
+│── requirements.txt
+│── manage.py
+```
 
-Le nouveau module modele_ia introduit deux vues principales exposant des services via des endpoints API.
+---
 
-## A. 💬 Chatbot de Bien-être et Conseils (API Endpoint: api/chatbot/)
+# 🧠 Module IA – Présentation
 
-Cette vue implémente un chatbot conçu pour offrir des conseils de bien-être et de l'assistance aux femmes enceintes.Objectif : Encourager le bien-être général et fournir des informations non médicales.Contrainte Éthique et Sécurité : Le modèle est strictement configuré pour NE PAS fournir de recommandations sur des médicaments ou des traitements médicaux. Son rôle est d'inciter la patiente à consulter son médecin en cas de problème de santé.
+L'application inclut désormais un module `modele_ia` offrant **deux services intelligents** :
 
-## B. 🔬 Vue de Prédiction du Risque de Santé Maternelle
+---
 
-Cette vue expose un service d'analyse prédictive qui sert d'Outil d'Aide à la Décision Clinique pour les professionnels de la santé.
-### **Modèle Utilisé : ***
+## 1️⃣ 💬 Chatbot de Bien-Être
 
- Un modèle de Machine Learning entraîné pour évaluer le risque de la femme enceinte (Faible, Moyen, Élevé).
- 
- ### Fonctionnalité pour le Clinicien :
- 
- Le modèle analyse les données des visites passées pour fournir une vue d'ensemble de la tendance du risque.Pour chaque prédiction de visite, des explications claires sont fournies, identifiant le facteur clé (la donnée) qui a conduit à la décision de risque.Un graphique est généré pour visualiser l'évolution du risque au fil des rendez-vous.
- 
- ## Données d'Entrée Utilisées pour le Modèle :
- 
-  Le modèle utilise les données statiques (de base) et celles relevées lors de chaque visite : Âge de la patiente, Tension Systolique (BP),Pression artérielle, systolique, Tension Diastolique (BP), Pression artérielle diastolique, Température corporelle
-  
-  ## 📂 Fichiers et Intégration du ModèleFichiers du Modèle et des Données :
-  
-  Le module modele_ia contient le modèle entraîné sous forme de fichier sérialisé  maternal_health.pkl.Le fichier des données utilisé pour l'entraînement est également inclus à des fins de référence : Maternal Health Risk Data Set.csv.
-  
-  ## Configuration des URLs :
-  
-  Le module modele_ia inclut son propre fichier urls.py définissant les routes (api/chatbot/ et la vue de prédiction).Ces chemins d'accès ont été ajoutés et inclus dans le fichier d'URLs principal (urls.py) du projet.
-  
-  ## 4. ▶️ Démarrage du ProjetPour exécuter le projet, il suffit de :
-  
-  Télécharger (dézipper) le projet.Lancer le serveur en local.Le projet devrait alors être fonctionnel et prêt à tester les nouvelles API.
+**Endpoint :** `api/chatbot/`
 
-## 5. 💻 Intégration de la Vue Frontend (Code React)
+Un chatbot conçu pour accompagner les femmes enceintes avec des **conseils non médicaux** :
 
-Cette section documente l'ajout du code client (frontend) qui permet d'afficher la vue de prédiction et d'analyse des risques pour le médecin.
+* Gestion du stress
+* Bien-être émotionnel
+* Activité physique légère
+* Conseils généraux de prévention
 
-Localisation du Code : Le code React pour cette vue est inclus dans le fichier .zip fourni, au sein du dossier : viacare-front.
+**Contraintes éthiques & sécurité :**
 
-Fonctionnalité : Ce code est déjà fonctionnel et interagit avec l'API de prédiction. Il est spécifiquement conçu pour être utilisé par le clinicien (le médecin).
+* ❌ **Aucune recommandation médicale, aucun médicament**
+* ❌ **Aucun diagnostic médical**
+* ✔️ Le bot oriente toujours la patiente vers un médecin en cas de symptômes
 
-Travail Restant (Amélioration) :
+---
 
-Le CSS doit être modifié pour être en conformité avec la charte graphique et le design system du site existant.
+## 2️⃣ 🔬 Prédiction du Risque de Santé Maternelle
 
-Le dossier viacare-front doit être ajouté au code frontend existant en ligne.
+**Endpoint :** `api/predict/`
 
-## Instruction Impérative pour le Déploiement
+Un outil d’aide à la décision pour les médecins.
 
-Lors de la mise en production du code frontend, il est obligatoire de modifier l'URL de l'API dans le fichier app.jsx pour qu'elle pointe vers le bon endpoint en production.
+### Fonctionnalités :
 
-http://127.0.0.1:8000/api/predict/ en exemple: https://votre-domaine.com/api/predict/
+* Analyse automatique des données des visites
+* Classification du risque : **Faible / Moyen / Élevé**
+* Explication du facteur principal ayant influencé la prédiction
+* Génération d’un graphique montrant l’évolution du risque au fil du temps
 
-cette ligne dois etre mis a jour const apiUrl = 'http://127.0.0.1:8000/api/predict/';
+### Variables utilisées :
 
-et le module necessaire sont deja inclu dans requirements.txt
+| Variable            | Description                     | Unité         |
+| ------------------- | ------------------------------- | ------------- |
+| Âge                 | Âge de la patiente              | années        |
+| BP Sys              | Pression artérielle systolique  | mmHg          |
+| BP Dia              | Pression artérielle diastolique | mmHg          |
+| Glycémie (BGS)      | Taux de sucre                   | g/L ou mmol/L |
+| Température         | Température corporelle          | °F            |
+| Fréquence cardiaque | Battement/min                   | bpm           |
+
+### Fichiers inclus :
+
+* **maternal_health.pkl** : modèle ML entraîné
+* **Maternal Health Risk Data Set.csv** : dataset de référence
+
+---
+
+## ⚙️ Installation locale
+
+*(inchangé, juste propre)*
+
+```bash
+git clone https://github.com/TON-ORGANISATION/viacareme-backend.git
+cd viacareme-backend
+
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+pip install -r requirements.txt
+
+cp .env.example .env
+
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver
+```
+
+---
+
+## 🔑 Authentification (JWT)
+
+* Login via email + mot de passe
+* Access / Refresh tokens
+* Permissions selon rôles (SuperAdmin, Gestionnaire, Médecin, Patiente)
+
+---
+
+## 🌐 API en Production
+
+Base URL : `https://api.viacareme.com/api/`
+
+### Modules principaux :
+
+* `/auth/` – Authentification
+* `/hospitals/` – Hôpitaux
+* `/medecins/` – Médecins
+* `/patientes/` – Patientes
+* `/consultations/` – Consultations
+* `/grossesses/` – Grossesses
+* `/cards/` – Cartes RFID
+* `/sms/` – SMS
+* **`/chatbot/` – Chatbot IA**
+* **`/predict/` – Prédiction de risque**
+
+---
+
+## 🧪 Tester avec Postman
+
+Collection complète :
+👉 **[https://www.postman.com/zigi77-5461/viacareme/](https://www.postman.com/zigi77-5461/viacareme/)...**
+
+*(section inchangée)*
+
+---
+
+## 🔒 Sécurité
+
+* Auth JWT
+* Permissions par rôle
+* OTP sécurisé
+* Chiffrement des données sensibles
+* Contraintes IA strictes (pas de médecine)
+* Audit des actions sensibles
+
+---
+
+## 📧 Contact
+
+* Site : [https://viacareme.com](https://viacareme.com)
+* Email : [mablaferawi@gmail.com](mailto:mablaferawi@gmail.com)
+* Téléphone : +243 813 308 078
+
+---
+
+## © 2024 VIACAREME – Tous droits réservés
+
