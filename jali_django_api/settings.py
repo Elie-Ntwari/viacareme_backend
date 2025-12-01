@@ -30,8 +30,8 @@ ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost"])
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
 
 CORS_ALLOW_CREDENTIALS = True  # important pour envoyer cookies HttpOnly
-GEMINI_API_KEY = "AIzaSyAEYB2CkNeWAr4fQGoMPDj4pQfVdarVYmQ"
 
+GEMINI_API_KEY = env("GEMINI_API_KEY")
 
 # Applications
 INSTALLED_APPS = [
