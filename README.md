@@ -1,181 +1,84 @@
-# VIACAREME – Backend (Django REST Framework)
+#  ** Mise à Jour du Projet : Intégration de l'Intelligence Artificielle pour la Santé Maternelle **
 
-Backend de la solution **VIACAREME**, un système de gestion des dossiers médicaux des femmes enceintes, conçu pour centraliser et sécuriser les données médicales.
+Ce document présente les modifications ajoutées au code existant et les étapes de configuration nécessaires suite à l'intégration d'un nouveau module d'intelligence artificielle (IA) et de fonctionnalités d'assistance dans l'application.
 
-## 🚀 Fonctionnalités principales
+Le travail consistait principalement à :
 
-- Gestion des hôpitaux et des médecins
-- Enregistrement et suivi des patientes
-- Gestion des cartes à puce (RFID) pour l'identification sécurisée
-- Consultations médicales et rendez-vous
-- Gestion des grossesses et clôture de dossiers
-- Accès temporaire aux données via code OTP sécurisé
-- Envoi de SMS pour notifications
-- Authentification et rôles (SuperAdmin, Gestionnaire, Médecin, Patiente)
+Ajouter des fonctionnalités d'assistance (Chatbot de bien-être).
 
-## 🛠️ Stack technique
+Intégrer un modèle de Machine Learning pour la prédiction et l'analyse du risque en santé maternelle.
 
-- **Backend** : Django + Django REST Framework
-- **Base de données** : PostgreSQL
-- **Authentification** : JWT (JSON Web Token)
-- **Hébergement** : AWS (Amazon Web Services)
-- **API Base URL** : https://api.viacareme.com/api/
+## 💡 ** 1. 🛠️ Étapes de Configuration et Initialisation du Module **
+Cette section détaille les actions nécessaires pour initialiser le nouveau module et préparer l'environnement.
 
-## 📂 Structure du projet
+Le nouveau module modele_ia introduit deux vues principales exposant des services via des endpoints API.A. 💬 Chatbot de Bien-être et Conseils (API Endpoint: api/chatbot/ et api/predict/)Cette vue implémente un chatbot conçu pour offrir des conseils de bien-être et de l'assistance aux femmes enceintes.Objectif : Encourager le bien-être général et fournir des informations non médicales.Contrainte Éthique et Sécurité : Le modèle est strictement configuré pour NE PAS fournir de recommandations sur des médicaments ou des traitements médicaux. Son rôle est d'inciter la patiente à consulter son médecin en cas de problème de santé.B. 🔬 Vue de Prédiction du Risque de Santé MaternelleCette vue expose un service d'analyse prédictive qui sert d'Outil d'Aide à la Décision Clinique pour les professionnels de la santé.Modèle Utilisé : Un modèle de Machine Learning entraîné pour évaluer le risque de la femme enceinte (Faible, Moyen, Élevé).Fonctionnalité pour le Clinicien :Le modèle analyse les données des visites passées pour fournir une vue d'ensemble de la tendance du risque.Pour chaque prédiction de visite, des explications claires sont fournies, identifiant le facteur clé (la donnée) qui a conduit à la décision de risque.Un graphique est généré pour visualiser l'évolution du risque au fil des rendez-vous.Données d'Entrée Utilisées pour le Modèle : Le modèle utilise les données statiques (de base) et celles relevées lors de chaque visite :VariableDescriptionUnitéÂgeÂge de la patiente.AnnéesTension Systolique (BP)Pression artérielle systolique.mmHgTension Diastolique (BP)Pression artérielle diastolique.mmHgGlycémie (BGS)Taux de sucre dans le sang.g/L ou mmol/LTempérature (°F)Température corporelle.Degrés Fahrenheit (°F)Fréquence CardiaqueBattements cardiaques par minute.Bpm3. 📂 Fichiers et Intégration du ModèleFichiers du Modèle et des Données :Le module modele_ia contient le modèle entraîné sous forme de fichier sérialisé : maternal_health.pkl.Le fichier des données utilisé pour l'entraînement est également inclus à des fins de référence : Maternal Health Risk Data Set.csv.Configuration des URLs :Le module modele_ia inclut son propre fichier urls.py définissant les routes (api/chatbot/ et la vue de prédiction).Ces chemins d'accès ont été ajoutés et inclus dans le fichier d'URLs principal (urls.py) du projet.
+Création et Enregistrement de l'Application Django :
 
-```
-viacareme_backend/
-│── jali_django_api/        # Configuration Django principale
-│── auth_module/            # Authentification et gestion des utilisateurs
-│── hospital_module/        # Gestion des hôpitaux
-│── medical_module/         # Gestion des médecins
-│── patiente__module/       # Gestion des patientes
-│── consultation_module/    # Consultations médicales
-│── grossesse_module/       # Suivi des grossesses
-│── cards_module/           # Gestion des cartes RFID
-│── sms_sender/             # Envoi de SMS
-│── requirements.txt        # Dépendances Python
-│── manage.py               # Script de gestion Django
-```
+Un nouveau module Django nommé modele_ia a été créé via la commande django-admin startapp modele_ia.
 
-## 🌐 API en Production
+Cette nouvelle application a été ajoutée à la liste INSTALLED_APPS dans le fichier settings.py.
 
-L'API est hébergée sur **AWS** et accessible à l'adresse suivante :
+## ** Gestion de la Clé d'API : **
 
-**Base URL** : `https://api.viacareme.com/api/`
+Une nouvelle clé de configuration, GEMINI_API_KEY, a été ajoutée au fichier settings.py.
 
-### Endpoints principaux
+⚠️ Important : Pour une utilisation en production, cette clé doit être stockée dans un fichier de configuration sécurisé (.env) plutôt que directement dans settings.py.
 
-- **Authentification** : `/auth/`
-  - Login, logout, refresh token
-- **Hôpitaux** : `/hospitals/`
-  - CRUD des hôpitaux et zones de santé
-- **Médecins** : `/medecins/`
-  - Gestion des médecins et leurs affectations
-- **Patientes** : `/patientes/`
-  - Enregistrement et suivi des patientes
-- **Consultations** : `/consultations/`
-  - Gestion des consultations médicales
-- **Grossesses** : `/grossesses/`
-  - Suivi des grossesses et clôture de dossiers
-- **Cartes RFID** : `/cards/`
-  - Attribution et gestion des cartes à puce
-- **SMS** : `/sms/`
-  - Envoi de notifications par SMS
+## ** 2. 💡 Nouvelles Fonctionnalités Développées **
 
-## 🧪 Tester l'API avec Postman
+Le nouveau module modele_ia introduit deux vues principales exposant des services via des endpoints API.
 
-Une collection Postman complète est disponible avec tous les endpoints et exemples de requêtes :
+## A. 💬 Chatbot de Bien-être et Conseils (API Endpoint: api/chatbot/)
 
-**[📦 Collection Postman VIACAREME](https://www.postman.com/zigi77-5461/viacareme/collection/33722566-854fff4b-c2d4-44c2-8f77-78644ca8ad16?action=share&source=copy-link&creator=33722566)**
+Cette vue implémente un chatbot conçu pour offrir des conseils de bien-être et de l'assistance aux femmes enceintes.Objectif : Encourager le bien-être général et fournir des informations non médicales.Contrainte Éthique et Sécurité : Le modèle est strictement configuré pour NE PAS fournir de recommandations sur des médicaments ou des traitements médicaux. Son rôle est d'inciter la patiente à consulter son médecin en cas de problème de santé.
 
-### 🔐 Guide de test rapide
+## B. 🔬 Vue de Prédiction du Risque de Santé Maternelle
 
-1. **Ouvrir la collection Postman** via le lien ci-dessus
-2. **Naviguer vers** `auth_module` → `LOGIN`
-3. **Vérifier l'URL** : Assurez-vous que l'URL est `https://api.viacareme.com/api/auth/login/` (et non localhost)
-4. **Lancer la requête** avec les credentials fournis dans le body :
+Cette vue expose un service d'analyse prédictive qui sert d'Outil d'Aide à la Décision Clinique pour les professionnels de la santé.
+### **Modèle Utilisé : ***
 
-   ```json
-   {
-     "email": "docteur@hopital.cd",
-     "password": "1234567890"
-   }
-   ```
+ Un modèle de Machine Learning entraîné pour évaluer le risque de la femme enceinte (Faible, Moyen, Élevé).
+ 
+ ### Fonctionnalité pour le Clinicien :
+ 
+ Le modèle analyse les données des visites passées pour fournir une vue d'ensemble de la tendance du risque.Pour chaque prédiction de visite, des explications claires sont fournies, identifiant le facteur clé (la donnée) qui a conduit à la décision de risque.Un graphique est généré pour visualiser l'évolution du risque au fil des rendez-vous.
+ 
+ ## Données d'Entrée Utilisées pour le Modèle :
+ 
+  Le modèle utilise les données statiques (de base) et celles relevées lors de chaque visite : Âge de la patiente, Tension Systolique (BP),Pression artérielle, systolique, Tension Diastolique (BP), Pression artérielle diastolique, Température corporelle
+  
+  ## 📂 Fichiers et Intégration du ModèleFichiers du Modèle et des Données :
+  
+  Le module modele_ia contient le modèle entraîné sous forme de fichier sérialisé  maternal_health.pkl.Le fichier des données utilisé pour l'entraînement est également inclus à des fins de référence : Maternal Health Risk Data Set.csv.
+  
+  ## Configuration des URLs :
+  
+  Le module modele_ia inclut son propre fichier urls.py définissant les routes (api/chatbot/ et la vue de prédiction).Ces chemins d'accès ont été ajoutés et inclus dans le fichier d'URLs principal (urls.py) du projet.
+  
+  ## 4. ▶️ Démarrage du ProjetPour exécuter le projet, il suffit de :
+  
+  Télécharger (dézipper) le projet.Lancer le serveur en local.Le projet devrait alors être fonctionnel et prêt à tester les nouvelles API.
 
-   _(Autres rôles disponibles en commentaire : Admin, Gestionnaire)_
+## 5. 💻 Intégration de la Vue Frontend (Code React)
 
-5. **Copier le token** : Dans la réponse, récupérer la valeur de `access_token`
+Cette section documente l'ajout du code client (frontend) qui permet d'afficher la vue de prédiction et d'analyse des risques pour le médecin.
 
-6. **Tester d'autres endpoints** :
-   - Aller dans un autre module (ex: `consultation_module`)
-   - Sélectionner une requête (ex: `patientes medecin full info`)
-   - Dans l'onglet **Authorization** :
-     - Type : `Bearer Token`
-     - Token : Coller le `access_token` obtenu
-   - Lancer la requête
+Localisation du Code : Le code React pour cette vue est inclus dans le fichier .zip fourni, au sein du dossier : viacare-front.
 
-### 📋 Exemples de requêtes disponibles
+Fonctionnalité : Ce code est déjà fonctionnel et interagit avec l'API de prédiction. Il est spécifiquement conçu pour être utilisé par le clinicien (le médecin).
 
-La collection Postman contient des exemples pour :
+Travail Restant (Amélioration) :
 
-- ✅ Authentification (login, logout, refresh)
-- 🏥 Gestion des hôpitaux
-- 👨‍⚕️ Gestion des médecins
-- 🤰 Gestion des patientes
-- 📋 Consultations médicales
-- 🤱 Suivi des grossesses
-- 💳 Attribution de cartes RFID
-- 📱 Envoi de SMS
+Le CSS doit être modifié pour être en conformité avec la charte graphique et le design system du site existant.
 
-## ⚙️ Installation locale
+Le dossier viacare-front doit être ajouté au code frontend existant en ligne.
 
-```bash
-# Cloner le repo
-git clone https://github.com/TON-ORGANISATION/viacareme-backend.git
-cd viacareme-backend
+## Instruction Impérative pour le Déploiement
 
-# Créer un environnement virtuel
-python -m venv venv
-# Activer environnement sur Windows:
-venv\Scripts\activate
-# Activer environnement sur Linux
-source venv/bin/activate 
+Lors de la mise en production du code frontend, il est obligatoire de modifier l'URL de l'API dans le fichier app.jsx pour qu'elle pointe vers le bon endpoint en production.
 
-# Installer les dépendances
-pip install -r requirements.txt
+http://127.0.0.1:8000/api/predict/ en exemple: https://votre-domaine.com/api/predict/
 
-# Configurer les variables d'environnement
-cp .env.example .env
-# Éditer .env avec vos configurations
+cette ligne dois etre mis a jour const apiUrl = 'http://127.0.0.1:8000/api/predict/';
 
-# Appliquer les migrations
-python manage.py migrate
-
-# Créer un superutilisateur
-python manage.py createsuperuser
-
-# Lancer le serveur
-python manage.py runserver
-```
-
-## 🔑 Authentification
-
-- **Login** via email + mot de passe
-- **JWT** (access & refresh tokens)
-- **Permissions** basées sur les rôles :
-  - **SuperAdmin** : Accès complet au système
-  - **Gestionnaire** : Gestion des hôpitaux et médecins
-  - **Médecin** : Consultation et suivi des patientes
-  - **Patiente** : Accès à son propre dossier médical
-
-## 🔒 Sécurité
-
-- Authentification JWT avec tokens d'accès et de rafraîchissement
-- Codes OTP temporaires pour accès sécurisé aux dossiers
-- Gestion des permissions par rôle
-- Chiffrement des données sensibles
-- Audit trail pour toutes les actions critiques
-
-## 📝 Documentation API
-
-Pour une documentation complète de l'API, consultez la collection Postman qui contient :
-
-- Tous les endpoints disponibles
-- Exemples de requêtes et réponses
-- Structure JSON attendue
-- Codes d'erreur et leur signification
-
-
-
-## 📧 Contact
-
-Pour toute question ou support, contactez l'équipe VIACAREME.
-
-- site web : `https://viacareme.com/`
-- mail : `mablaferawi@gmail.com`
-- téléphone : `+243 813 308 078`
----
-
-
-**© 2024 VIACAREME - Tous droits réservés**
+et le module necessaire sont deja inclu dans requirements.txt
