@@ -119,7 +119,6 @@ def create_otp_by_rfid(uid_rfid: str, action: str, expiry_minutes: int = 120):
                 "id": last_consultation.id,
                 "date_consultation": last_consultation.date_consultation,
                 "poids": last_consultation.poids,
-                "tension_arterielle": last_consultation.tension_arterielle,
                 "hauteur_uterine": last_consultation.hauteur_uterine,
                 "mouvements_foetaux": last_consultation.mouvements_foetaux,
                 "oedemes": last_consultation.oedemes,

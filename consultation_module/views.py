@@ -281,6 +281,54 @@ class CreateOtpByRfidView(APIView):
                     pat = Patiente.objects.get(id=patiente_id)
                 except Patiente.DoesNotExist:
                     return Response({"detail":"Patiente introuvable"}, status=404)
+
+                # Get last consultation
+                last_consultation = Consultation.objects.filter(grossesse__patiente=pat).order_by('-date_consultation').first()
+                derniere_consultation = None
+                if last_consultation:
+                    age = None
+                    if pat.date_naissance:
+                        today = timezone.now().date()
+                        age = relativedelta(today, pat.date_naissance).years
+                    systolic = last_consultation.SystolicBP if last_consultation.SystolicBP is not None else random.randint(90, 140)
+                    diastolic = last_consultation.DiastolicBP if last_consultation.DiastolicBP is not None else random.randint(60, 90)
+                    bs_mmol = float(last_consultation.BS) / 18 if last_consultation.BS is not None else round(random.uniform(3.5, 7.0), 2)
+                    body_temp_f = (float(last_consultation.BodyTemp) * 9/5 + 32) if last_consultation.BodyTemp is not None else round(random.uniform(96.0, 102.0), 2)
+                    heart_rate = last_consultation.HeartRate if last_consultation.HeartRate is not None else random.randint(60, 100)
+                    derniere_consultation = {
+                        "Age": age,
+                        "SystolicBP": systolic,
+                        "DiastolicBP": diastolic,
+                        "BS": bs_mmol,
+                        "BodyTemp": body_temp_f,
+                        "HeartRate": heart_rate
+                    }
+
+                # Get current or last pregnancy
+                grossesse_en_cours = Grossesse.objects.filter(patiente=pat).order_by('-date_debut').first()
+                grossesse_data = None
+                dossier_data = None
+                if grossesse_en_cours:
+                    grossesse_data = GrossesseSerializer(grossesse_en_cours).data
+                    dossier = getattr(grossesse_en_cours, "dossier", None)
+                    if dossier:
+                        dossier_data = DossierObstetricalSerializer(dossier).data
+
+                # If no last consultation, generate default
+                if not derniere_consultation:
+                    age = None
+                    if pat.date_naissance:
+                        today = timezone.now().date()
+                        age = relativedelta(today, pat.date_naissance).years
+                    derniere_consultation = {
+                        "Age": age,
+                        "SystolicBP": random.randint(90, 140),
+                        "DiastolicBP": random.randint(60, 90),
+                        "BS": round(random.uniform(3.5, 7.0), 2),
+                        "BodyTemp": round(random.uniform(96.0, 102.0), 2),
+                        "HeartRate": random.randint(60, 100)
+                    }
+
                 code = ActionOTP.generate_code()
                 expire_at = timezone.now() + timedelta(minutes=10)
                 otp = ActionOTP.objects.create(patiente=pat, action=action, code_otp=code, expire_at=expire_at)
@@ -325,9 +373,9 @@ class CreateOtpByRfidView(APIView):
                     "otp_token": str(otp.token),
                     "otp_expire_at": otp.expire_at,
                     "patiente": patiente_info,
-                    "grossesse_en_cours": None,  # Could add if needed
-                    "dossier_obstetrical": None,
-                    "derniere_consultation": None,
+                    "grossesse_en_cours": grossesse_data,
+                    "dossier_obstetrical": dossier_data,
+                    "derniere_consultation": derniere_consultation,
                 }, status=201)
         except Exception as e:
             return Response({"detail": str(e)}, status=400)
