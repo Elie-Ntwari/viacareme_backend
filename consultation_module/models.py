@@ -20,7 +20,11 @@ class Consultation(models.Model):
 
     # Examens cliniques
     poids = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # kg
-    tension_arterielle = models.CharField(max_length=20, null=True, blank=True)  # "120/80"
+    SystolicBP = models.IntegerField(null=True, blank=True)  # Pression systolique
+    DiastolicBP = models.IntegerField(null=True, blank=True)  # Pression diastolique
+    BS = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # Glycémie ?
+    BodyTemp = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # Température corporelle
+    HeartRate = models.IntegerField(null=True, blank=True)  # Fréquence cardiaque
     hauteur_uterine = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # cm
     mouvements_foetaux = models.BooleanField(default=False)
     oedemes = models.BooleanField(default=False)

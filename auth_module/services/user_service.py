@@ -16,6 +16,7 @@ from auth_module.repositories.verification_repository import VerificationReposit
 from auth_module.serializers.user_serializer import UserFullSerializer
 from auth_module.services.totp_service import TOTPService
 from auth_module.services.email_service import EmailService
+from auth_module.services.sms_service import SMSService
 from hospital_module.models import Gestionnaire
 
 # Configs
@@ -337,11 +338,15 @@ class UserService:
 
         new_code_instance = VerificationRepository.resend_code(user, canal, expiration_minutes=15)
 
-        # Envoi email si canal EMAIL
+        # Envoi selon le canal
         if canal == "EMAIL":
             EmailService.send_activation_email(user.email, new_code_instance.code)
-
-      
+        elif canal == "SMS":
+            if not user.telephone:
+                raise ValidationError("Aucun numéro de téléphone associé à ce compte.")
+            SMSService.send_activation_sms(user.telephone, new_code_instance.code)
+        else:
+            raise ValidationError("Canal non supporté. Utilisez 'EMAIL' ou 'SMS'.")
 
         return {"message": f"Un nouveau code de vérification a été envoyé via {canal}."}
 

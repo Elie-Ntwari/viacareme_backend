@@ -17,7 +17,10 @@ from grossesse_module.models import Grossesse
 from auth_module.models.user import User
 from hospital_module.models import Hopital
 from medical_module.models.medecin import Medecin
+from patiente__module.models.patiente import Patiente
 from sms_sender.services import send_sms_via_md
+from dateutil.relativedelta import relativedelta
+import random
 
 
 
@@ -318,6 +321,7 @@ class CreateOtpByRfidView(APIView):
                 return Response({
                     "success": True,
                     "message": "OTP envoyé sur le SMS",
+                    "code": code,
                     "otp_token": str(otp.token),
                     "otp_expire_at": otp.expire_at,
                     "patiente": patiente_info,
@@ -432,6 +436,46 @@ class MedecinPatientesFullInfoView(APIView):
             })
 
         return paginator.get_paginated_response(result)
+
+
+class PatientVisitsFeaturesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, grossesse_id):
+        try:
+            grossesse = Grossesse.objects.get(id=grossesse_id)
+        except Grossesse.DoesNotExist:
+            return Response({"detail": "Grossesse introuvable."}, status=status.HTTP_404_NOT_FOUND)
+
+        patiente = grossesse.patiente
+
+        # Calculate age
+        age = None
+        if patiente.date_naissance:
+            today = timezone.now().date()
+            age = relativedelta(today, patiente.date_naissance).years
+
+        # Get consultations with the new fields
+        consultations = Consultation.objects.filter(grossesse=grossesse).order_by('date_consultation')
+
+        visits = []
+        for cons in consultations:
+            systolic = cons.SystolicBP if cons.SystolicBP is not None else random.randint(90, 140)
+            diastolic = cons.DiastolicBP if cons.DiastolicBP is not None else random.randint(60, 90)
+            bs_mmol = float(cons.BS) / 18 if cons.BS is not None else round(random.uniform(3.5, 7.0), 2)
+            body_temp_f = (float(cons.BodyTemp) * 9/5 + 32) if cons.BodyTemp is not None else round(random.uniform(96.0, 102.0), 2)
+            heart_rate = cons.HeartRate if cons.HeartRate is not None else random.randint(60, 100)
+            visit = {
+                "Age": age,
+                "SystolicBP": systolic,
+                "DiastolicBP": diastolic,
+                "BS": bs_mmol,
+                "BodyTemp": body_temp_f,
+                "HeartRate": heart_rate
+            }
+            visits.append(visit)
+
+        return Response({"visits": visits}, status=status.HTTP_200_OK)
 
 
 

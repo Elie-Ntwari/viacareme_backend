@@ -131,6 +131,7 @@ def create_otp_by_rfid(uid_rfid: str, action: str, expiry_minutes: int = 120):
     return {
         "success": True,
         "message": "OTP envoyé sur le SMS",
+        "code": code,
         "otp_token": str(otp.token),
         "otp_expire_at": otp.expire_at,
         "patiente": patiente_info,
